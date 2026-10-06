@@ -1,0 +1,23 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "eval": "localStorage.setItem('lang','ne'); localStorage.setItem('lang_user_set','1'); 'ok'" },
+    { "nav": "http://localhost:4600/admin/users", "after": 5500 },
+    { "shot": "18-users-ne.png" },
+    { "nav": "http://localhost:4600/admin/access", "after": 4500 },
+    { "click": "text=प्रशासक थप्नुहोस्", "after": 900 },
+    { "shot": "19-add-admin-ne.png" },
+    { "eval": "localStorage.setItem('lang','en'); 'ok'" },
+    { "nav": "http://localhost:4600/admin/access", "after": 4500 },
+    { "click": "text=Add admin", "after": 900 },
+    { "shot": "20-add-admin-en.png" },
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+    { "nav": "http://localhost:4600/admin/overview", "after": 5500 },
+    { "click": "text=Collapse sidebar", "after": 900 },
+    { "shot": "21-rail.png" },
+    { "log": "JSON.stringify({rail: localStorage.getItem('admin:sidebar-rail'), sidebarW: document.querySelector('aside').getBoundingClientRect().width})" }
+  ]
+}

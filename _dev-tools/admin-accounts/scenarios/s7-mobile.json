@@ -1,0 +1,28 @@
+{
+  "width": 390,
+  "height": 844,
+  "mobile": true,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 5500 },
+    { "shot": "m1-users.png" },
+    { "eval": "document.querySelector('button[aria-label=\"Open menu\"]').click()" },
+    { "wait": 700 },
+    { "shot": "m2-drawer.png" },
+    { "log": "JSON.stringify({sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth})" },
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+    { "click": "text=Anita Gurung", "after": 1500 },
+    { "shot": "m3-drawer-detail.png" },
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+    { "nav": "http://localhost:4600/admin/access", "after": 4500 },
+    { "shot": "m4-access.png" },
+    { "log": "JSON.stringify({sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth})" },
+    { "nav": "http://localhost:4600/admin/audit", "after": 4500 },
+    { "shot": "m5-audit.png" },
+    { "log": "JSON.stringify({sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth})" },
+    { "nav": "http://localhost:4600/admin/profile", "after": 4500 },
+    { "shot": "m6-profile.png", "fullPage": true },
+    { "log": "JSON.stringify({sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth})" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 9000 },
+    { "shot": "40-users.png" },
+    { "nav": "http://localhost:4600/admin/access", "after": 9000 },
+    { "shot": "41-access.png" },
+    { "nav": "http://localhost:4600/admin/audit", "after": 9000 },
+    { "shot": "42-audit.png" },
+    { "nav": "http://localhost:4600/admin/overview", "after": 9000 },
+    { "shot": "43-overview.png" }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "super"
+    },
+    {
+      "eval": "localStorage.setItem('lang','ne'); localStorage.setItem('lang_user_set','1'); 'ok'"
+    },
+    {
+      "nav": "http://localhost:4600/admin/audit",
+      "after": 10000
+    },
+    {
+      "log": "JSON.stringify([...document.querySelectorAll('section li')].slice(0,6).map(li => li.querySelector('p').innerText.replace(/s+/g,' ')))"
+    },
+    {
+      "log": "'empty-state title: ' + (document.querySelector('h3') ? 'n/a' : 'n/a')"
+    },
+    {
+      "shot": "34-audit-ne.png"
+    },
+    {
+      "eval": "localStorage.setItem('lang','en'); 'ok'"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /super
+Disallow: /profile
+Disallow: /mybookings
+Disallow: /booking
+Disallow: /reset-password
+Disallow: /donate/success
+Disallow: /donate/failure
+Disallow: /api/
+
+Sitemap: https://ramchandratemple.org.np/sitemap.xml

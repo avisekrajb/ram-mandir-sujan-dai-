@@ -1,0 +1,11 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 3000 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 5000 },
+    { "shot": "01-users.png" },
+    { "log": "JSON.stringify({title: document.title, h2: [...document.querySelectorAll('h1,h2')].map(h=>h.innerText).slice(0,4), rows: document.querySelectorAll('tbody tr').length})" }
+  ]
+}

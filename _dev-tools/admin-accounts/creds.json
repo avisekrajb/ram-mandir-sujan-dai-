@@ -1,0 +1,14 @@
+{
+  "superadmin": {
+    "email": "super@test.local",
+    "password": "6Q7UeItxW7ws"
+  },
+  "admin": {
+    "email": "sita@test.local",
+    "password": "9t-MVVJmjBlX"
+  },
+  "disabledAdmin": {
+    "email": "ram@test.local",
+    "password": "3ndwVJlX6yEX"
+  }
+}

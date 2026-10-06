@@ -1,0 +1,92 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "super"
+    },
+    {
+      "nav": "http://localhost:4600/admin/users",
+      "after": 5500
+    },
+    {
+      "click": "button[aria-label='Actions: Deepa Karki']",
+      "after": 600
+    },
+    {
+      "click": "text=Reset password",
+      "after": 800
+    },
+    {
+      "click": "text=Reset password",
+      "after": 1800
+    },
+    {
+      "log": "document.querySelector('[role=dialog] code') ? 'temp pw shown, len ' + document.querySelector('[role=dialog] code').innerText.length : 'NO CODE'"
+    },
+    {
+      "shot": "22-reset-credential.png"
+    },
+    {
+      "click": "text=Done",
+      "after": 800
+    },
+    {
+      "click": "button[aria-label='Actions: Eshan Adhikari']",
+      "after": 600
+    },
+    {
+      "click": "text=Make admin",
+      "after": 900
+    },
+    {
+      "click": "[role=dialog] [role=checkbox]:nth-of-type(1)",
+      "after": 400
+    },
+    {
+      "shot": "23-promote-restrict.png"
+    },
+    {
+      "click": "text=Make admin",
+      "after": 1800
+    },
+    {
+      "log": "JSON.stringify([...document.querySelectorAll('tbody tr')].filter(r=>/Eshan/.test(r.innerText)).map(r=>r.innerText.replace(/\\s+/g,' ').slice(0,90)))"
+    },
+    {
+      "click": "button[aria-label='Actions: Hari Basnet']",
+      "after": 600
+    },
+    {
+      "click": "text=Delete",
+      "after": 800
+    },
+    {
+      "shot": "24-delete-confirm.png"
+    },
+    {
+      "log": "[...document.querySelectorAll('[role=dialog] button')].map(b=>b.innerText+':'+b.disabled).join(' | ')"
+    },
+    {
+      "type": [
+        "#confirm-text",
+        "DELETE"
+      ],
+      "after": 400
+    },
+    {
+      "log": "[...document.querySelectorAll('[role=dialog] button')].map(b=>b.innerText+':'+b.disabled).join(' | ')"
+    },
+    {
+      "click": "text=Delete account",
+      "after": 1800
+    },
+    {
+      "log": "JSON.stringify({stillThere: /Hari Basnet/.test(document.body.innerText), total: document.body.innerText.match(/ALL ACCOUNTS\\s*(\\d+)/i)?.[1]})"
+    }
+  ]
+}

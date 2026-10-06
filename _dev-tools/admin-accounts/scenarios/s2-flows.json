@@ -1,0 +1,33 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 4500 },
+
+    { "click": "button[aria-label='Actions: Anita Gurung']" },
+    { "shot": "02-row-menu.png" },
+    { "eval": "document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+
+    { "click": "text=Anita Gurung", "after": 1500 },
+    { "shot": "03-drawer.png" },
+    { "log": "document.querySelector('[role=dialog]') ? document.querySelector('[role=dialog]').innerText.slice(0,500) : 'NO DIALOG'" },
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+    { "wait": 400 },
+
+    { "click": "text=Add account", "after": 800 },
+    { "shot": "04-add-modal.png" },
+    { "type": ["#af-name", "Lakshmi Devi"] },
+    { "type": ["#af-email", "lakshmi.devi@test.local"] },
+    { "type": ["#af-phone", "9841000000"] },
+    { "click": "text=Create account", "after": 1500 },
+    { "shot": "05-credential.png" },
+    { "log": "document.querySelector('[role=dialog] code') ? document.querySelector('[role=dialog] code').innerText.length : 'no code'" },
+    { "click": "text=Done", "after": 1200 },
+
+    { "type": ["input[type=search]", "lakshmi"], "after": 1500 },
+    { "log": "JSON.stringify([...document.querySelectorAll('tbody tr')].map(r=>r.innerText.replace(/\\s+/g,' ').slice(0,90)))" },
+    { "shot": "06-search.png" }
+  ]
+}

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security Audit Report – Shree Ramchandra Temple website</title>
+<style>
+  :root { --ink:#1c1717; --soft:#5e5757; --line:#e7e1df; --bg:#ffffff; --tint:#f7f5f4; --red:#a80808; --ok:#1f6b3a; --okbg:#e8f3ec; --warnbg:#fbeaea; --amberbg:#fbf3df; --amber:#8a5a00; --greybg:#eeeceb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  .wrap { max-width:1020px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:28px; line-height:1.25; margin:0 0 6px; }
+  h2 { font-size:21px; margin:44px 0 10px; padding-top:8px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:26px 0 6px; }
+  p { margin:8px 0; } .sub { color:var(--soft); margin:0 0 4px; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; color:var(--red); letter-spacing:.04em; text-transform:uppercase; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:20px 0; }
+  .stat { background:var(--tint); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .stat b { display:block; font-size:28px; line-height:1.1; } .stat span { color:var(--soft); font-size:13px; }
+  .box { border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:14px 0; background:var(--tint); }
+  .box.red { background:var(--warnbg); border-color:#f0cccc; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--soft); background:var(--tint); }
+  td.id { white-space:nowrap; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .chip { display:inline-block; padding:1px 9px; border-radius:99px; font-size:12px; font-weight:600; white-space:nowrap; }
+  .fixed { background:var(--okbg); color:var(--ok); } .you { background:var(--warnbg); color:var(--red); }
+  .part { background:var(--amberbg); color:var(--amber); } .acc { background:var(--greybg); color:var(--soft); }
+  .sev-c { color:var(--red); font-weight:700; } .sev-h { color:var(--red); font-weight:600; } .sev-m { font-weight:600; } .sev-l { color:var(--soft); }
+  code, pre { font-family:Consolas,"Cascadia Mono",monospace; font-size:13px; }
+  code { background:var(--tint); border:1px solid var(--line); border-radius:5px; padding:0 5px; }
+  pre { background:var(--tint); border:1px solid var(--line); border-radius:10px; padding:12px 14px; overflow-x:auto; margin:8px 0 14px; white-space:pre-wrap; }
+  ol, ul { padding-left:22px; margin:8px 0; } li { margin:5px 0; }
+  .muted { color:var(--soft); font-size:13px; }
+  @media print { .wrap { padding:0; max-width:none; } h2 { break-after:avoid; } tr, .box, pre { break-inside:avoid; } body { font-size:12.5px; } }
+  @media (max-width:640px) { th:nth-child(1), td.id { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<span class="tag">Confidential – contains security findings</span>
+<h1>Security audit report</h1>
+<p class="sub"><b>Shree Ramchandra Temple website</b> (backend API, website, deployment files)</p>
+<p class="sub">Audit and fixes done on 5 October 2026. Project folder: <code>Desktop\New folder</code></p>
+<p class="muted">Please do not email, upload or share this file outside the people who run the site: it explains where the weak points were. It contains no passwords or keys.</p>
+
+<h2 style="border-top:0;margin-top:26px">1. Summary</h2>
+<p>The site was reviewed from three directions at once: the server code (every route and controller), the website code (every page, form and link), and the secrets, deployment and dependency files. The weak points were then tested for real against a throw-away copy of the server (never the live data), the fixes were written, and the same attacks were run again to prove each fix works.</p>
+
+<div class="stats">
+  <div class="stat"><b>51</b><span>distinct findings (merged from about 75 raw reports)</span></div>
+  <div class="stat"><b>32</b><span>fixed completely in the code</span></div>
+  <div class="stat"><b>8</b><span>need <u>you</u>: keys, accounts, hosting (most also got a code safeguard)</span></div>
+  <div class="stat"><b>11</b><span>partly fixed, low risk and left open, or accepted on purpose</span></div>
+  <div class="stat"><b>132</b><span>automatic checks passed (112 server, 9 upload, 11 browser)</span></div>
+</div>
+
+<div class="box red">
+  <b>The three things that matter most</b>
+  <ol>
+    <li><b>The secret key that signs every login, and the super-admin password, are weak</b> (a readable phrase and 6 digits) and the same copy is inside <code>backend.zip</code>. Anyone who has seen that zip or the <code>.env</code> file can act as any user. These are <u>yours to change</u>: they cannot be fixed from code. Section 3 gives the exact steps.</li>
+    <li><b>The fixes are running on your computer, not on the live website.</b> The local backend on port 5000 had stopped, so it was started again with the new code (check done: protection headers present, super admin untouched, site pages load). It runs as a background task, so after a reboot start it yourself: <code>node --require "..\..\_dev-tools\dnsfix.js" server.js</code> from <code>backend\backend</code>. Your <b>live</b> server needs the new code deployed and the settings in step 6 below, and the website needs a rebuild.</li>
+    <li><b>The production settings file is still an unfinished template</b> (placeholder web addresses, live payment mode). If the website is built from it, logins and donations would be sent to an address that is not the temple's. A build now refuses to run until it is fixed.</li>
+  </ol>
+</div>
+
+<p><b>What was not touched:</b> the live database, the real <code>.env</code> files, the two zip files, and the other Claude sessions' running servers. One note: while checking, an update of the website's software libraries briefly broke the shared development server on port 4000; it recovered by itself after a file nudge and nothing was stopped.</p>
+
+<h2>2. What the website follows (security controls)</h2>
+<p>This is the report of how the site is protected, area by area, <b>after</b> the fixes in this audit. "New" means added by this audit.</p>
+<table>
+<tr><th>Area</th><th>How it is protected</th><th>State</th></tr>
+<tr><td>Sign-in</td><td>Passwords stored with bcrypt (cost 12). Login answers the same for unknown and wrong passwords, with equal timing. Failed logins are counted per account (10 in 15 minutes) and per address (20). Google sign-in is verified with Google itself (token audience and verified e-mail). E-mail one-time code sign-in is single-use with an attempt cap. <i>New:</i> the super admin password is no longer rewritten from <code>.env</code> at every login/start.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Passwords</td><td><i>New:</i> one rule everywhere (sign-up, reset, change, admin-created accounts): at least 8 characters, no common passwords ("123456", "password", "ramchandra1" …), no repeats or simple runs, not containing the e-mail name.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Password reset</td><td><i>New:</i> 6-digit code (was 4), 5 guesses per code counted atomically, max 5 codes per hour per account, the reset step works once, and "forgot password" gives the same answer whether or not the e-mail has an account.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Sessions</td><td>Login token lasts 30 days and renews while the person keeps visiting (the owner asked for saved logins). Sessions can be ended: suspend, reset, role change, "sign out everywhere". <i>New:</i> changing your own password also ends your other devices.</td><td><span class="chip part">Accepted trade-off</span></td></tr>
+<tr><td>Who can do what</td><td>Roles (visitor / admin / super admin) and per-area permissions are checked on the server for every admin route (verified by calling all 256 routes as an anonymous visitor and as an ordinary user: no write access anywhere). <i>New:</i> admins still on a temporary password have no staff powers on any route; the donation on/off switches really are super-admin only.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Data injection</td><td>Database operators typed into forms (<code>{"$ne":null}</code>) and prototype-pollution keys are stripped from every request. Every regular expression built from input is escaped.</td><td><span class="chip fixed">New</span></td></tr>
+<tr><td>Scripts in pages (XSS)</td><td>The site renders text through React (no raw HTML anywhere). <i>New:</i> links saved by admins (map, footer buttons, social links, live video, payment screenshot) are refused if they start with <code>javascript:</code> / <code>data:</code>, and the pages themselves also refuse them. Proven in a real browser with poisoned data.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>E-mails</td><td><i>New:</i> everything a visitor typed is escaped before it goes into an HTML e-mail; one recipient per message and no header tricks; subscribing is limited to your own account address with a rate limit.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Cross-site access (CORS)</td><td><i>New:</i> only the temple's own addresses (plus <code>FRONTEND_URL</code> / <code>CORS_ORIGINS</code>) may call the API. Other projects' addresses, placeholders and localhost were removed from production.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Abuse limits</td><td>Global ceiling per address; stricter limits on login, sign-up, reset, contact, reviews, bookings, uploads, subscribe, reminders, visitor tracking. <i>New:</i> the server now learns the visitor's real address behind Render's proxy (<code>trust proxy</code>), so one person can no longer use up everybody's allowance.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Uploads</td><td>Pictures only for visitors (profile 5 MB, payment screenshot 10 MB, 20 an hour); admins keep photos and videos up to 50 MB. No SVG or HTML is accepted. Files go to Cloudinary, not the server disk.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Payments</td><td>The server checks the payment with eSewa / Khalti / ConnectIPS itself (signature, amount, owner, pending state); nothing is trusted from the browser. <i>New:</i> amounts must be real numbers (Rs. 1 – 1 crore), a payment is completed once even if confirmed twice at the same moment, error text no longer reveals settings.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Browser protection headers</td><td><i>New:</i> API: no-sniff, no-framing, HSTS, no referrer, strict content policy, no <code>X-Powered-By</code>. Website: a ready file <code>public\_headers</code> with a tested content policy in <i>report-only</i> mode (cannot break the site) – see section 3, step 9.</td><td><span class="chip part">Needs hosting step</span></td></tr>
+<tr><td>Secrets &amp; configuration</td><td><i>New:</i> <code>.gitignore</code>, <code>.dockerignore</code>, <code>.env.example</code>; Dockerfile runs as a normal user on Node 24; the server prints a loud warning at start if the live settings are unsafe; the website build stops while placeholder addresses remain.</td><td><span class="chip you">Your keys: see §3</span></td></tr>
+<tr><td>Logging &amp; privacy</td><td><i>New:</i> logs show the page path, not the address bar query (phone numbers and booking references used to be in it); no e-mail addresses in the sign-in logs; the visitor table no longer receives the secret part of reset links, and visitor addresses are no longer sent in plain text to a third-party lookup site.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Database tools</td><td><i>New:</i> the super-admin database screens only see this site's own collections (the database is shared with other apps) and never show password hashes or reset codes.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Backups</td><td>Backups are stored privately and can be downloaded only for 10 minutes; restore and delete are super-admin only. <i>New:</i> the download no longer fetches addresses typed by visitors.</td><td><span class="chip fixed">Fixed</span></td></tr>
+<tr><td>Libraries</td><td>Updated: nodemailer 10, multer 2, axios 1.20, react-router 6.30.6 and 24 patch updates; the unused login libraries were removed. What remains: Cloudinary SDK (blocked by its upload plug-in) and the Create-React-App build tools, which are not shipped to visitors.</td><td><span class="chip part">Mostly fixed</span></td></tr>
+</table>
+
+<h2>3. What you need to do (cannot be done from code)</h2>
+<p>Do these in this order. Steps 1–6 are the urgent ones.</p>
+<ol>
+  <li><b>Delete the two zip files and treat everything inside as exposed.</b> <code>New folder\backend.zip</code> contains the real <code>.env</code> and <code>.env.production</code>; <code>frontend.zip</code> contains the whole <code>.git</code> history and build maps. Check OneDrive / the old PC (<code>C:\Users\ASUS\OneDrive\...</code>) for older copies of the folder and delete their version history too.
+<pre>Remove-Item "C:\Users\Acer\Desktop\New folder\backend.zip","C:\Users\Acer\Desktop\New folder\frontend.zip"</pre></li>
+  <li><b>Make a new login-signing key</b> (different for the live server and for your computer) and put it only in the hosting dashboard / your local <code>.env</code>. Everyone will have to sign in once more, which is what you want.
+<pre>node -e "console.log(require('crypto').randomBytes(64).toString('base64url'))"</pre></li>
+  <li><b>Super admin:</b> sign in, then change the password inside the admin panel (Admin → My account) to a long one (14+ characters). Afterwards <b>delete <code>SUPERADMIN_PASSWORD</code></b> from every <code>.env</code> and from the host (the server only uses it to create the account the very first time). Use an address for <code>SUPERADMIN_EMAIL</code> that the temple owns and protects with 2-step sign-in: password reset mails go there.</li>
+  <li><b>Check for weak admin accounts.</b> An old seed script created <code>a@gmail.com</code> with a trivial password (it is now removed). This read-only helper lists staff accounts that still use a guessable password; it prints no passwords and changes nothing:
+<pre>cd "C:\Users\Acer\Desktop\New folder\backend\backend"
+node ..\..\_dev-tools\security-audit\check-weak-staff-passwords.js</pre>
+  Change or delete every account it marks WEAK. (I did not run it for you: the database is shared with other apps and I did not want to read their accounts.)</li>
+  <li><b>Separate the live and test databases and rotate the other keys.</b> Give the live site its own database name in <code>MONGODB_URI</code> and a new database user with a 24+ character password (Atlas → Database Access), keep a different one for your computer, and turn off "allow access from anywhere" in Atlas Network Access if you can. Regenerate the Cloudinary API secret, and create a new Gmail app password (the old one was in the zip). <code>GOOGLE_CLIENT_SECRET</code> is not used by the code any more; remove it and reset it in Google Cloud.</li>
+  <li><b>Finish the live settings</b> (in the hosting dashboard, not in a file): <code>NODE_ENV=production</code>, <code>FRONTEND_URL</code> = the real https address of the website, <code>BACKEND_URL</code> = the real https address of the API, <code>CORS_ORIGINS</code> if there is more than one site address, <code>TRUST_PROXY</code> = the number of proxies in front of the API (<code>1</code> for Render alone, <code>2</code> if Cloudflare is in front too; the wrong number makes visitors share one address or lets them fake theirs), real <code>ESEWA_*</code>, <code>KHALTI_*</code>, <code>IPS_*</code> keys and return addresses (the template points them at <code>your-frontend-url.onrender.com</code>, a name anyone can register), <code>GOOGLE_CLIENT_ID</code>. For the website build set <code>REACT_APP_API_URL</code> to the real API address. The server now prints warnings at start-up for anything still wrong, and <code>npm run build</code> refuses while the API address is a placeholder.</li>
+  <li><b>Restart the backend and redeploy the website</b> so the fixes go live. Then press <i>Send test email</i> in <i>Calendar → My reminders</i>: the mail library was upgraded and I could not send through Gmail from here.</li>
+  <li><b>Tidy the website folder.</b> Delete <code>frontend\frontend\build\</code> (an old build with the placeholder API address and 32 source-map files). Decide what to do with <code>public\puzzle.html</code>: it loads three scripts from a public CDN without a version lock and sits on the same address as the site, so a compromised CDN file could read logins. Delete it, or move it to a separate address, or pin and checksum the scripts.</li>
+  <li><b>Switch on the browser protection headers.</b> Put the lines from <code>frontend\frontend\public\_headers</code> into the website host (Render: Static Site → Headers). Replace <code>YOUR-API-HOST</code> with the API address first. It starts in <i>report-only</i> mode: nothing can break; after a week with no complaints in the browser console, rename the header to <code>Content-Security-Policy</code> to enforce it.</li>
+  <li><b>Housekeeping:</b> old visitor records may still contain reset-link secrets – mask them once with
+<pre>node ..\..\_dev-tools\security-audit\purge-visitor-reset-tokens.js          (dry run: counts only)
+node ..\..\_dev-tools\security-audit\purge-visitor-reset-tokens.js --apply</pre>
+  The reset helper <code>scripts\resetAdminPassword.js</code> now also signs the account out everywhere.</li>
+</ol>
+
+<h3>What visitors will notice</h3>
+<ul>
+  <li>Passwords must be at least 8 characters and not a common one (the sign-up, reset and change screens say so).</li>
+  <li>The password-reset code has 6 boxes (paste works). "Forgot password" says "if an account exists…" for every address.</li>
+  <li>Subscribing to updates works for the signed-in person's own address only.</li>
+  <li>Signing in with Google or an e-mailed code for an e-mail that was first registered with a password replaces that old password once and sends an e-mail saying so (they can choose a new one with "Forgot password"); this stops someone who registered another person's address in advance. People who already signed in with Google are not affected.</li>
+  <li>The ceremony list on the booking page looks the same in every language; the English name is what is stored.</li>
+  <li>The test-payment logins (eSewa/Khalti sandbox) are hidden on a production build.</li>
+  <li>Photos uploaded by visitors are pictures only (5 MB profile, 10 MB payment screenshot).</li>
+</ul>
+
+<h2>4. All findings</h2>
+<p class="muted">Severity: <span class="sev-c">Critical</span> / <span class="sev-h">High</span> / <span class="sev-m">Medium</span> / <span class="sev-l">Low</span>. Status: <span class="chip fixed">Fixed</span> in code and tested · <span class="chip part">Partly</span> · <span class="chip you">You</span> needs your action · <span class="chip acc">Accepted</span> known and left on purpose.</p>
+
+<h3>Critical and high</h3>
+<table>
+<tr><th>#</th><th>Severity</th><th>Finding</th><th>Status and what was done</th></tr>
+<tr><td class="id">1</td><td class="sev-c">Critical</td><td>Login-signing key is a readable phrase, identical for development and live, and sits in <code>backend.zip</code>. Anyone who knows it can make a valid login for any account, including the super admin.</td><td><span class="chip you">You</span> §3 step 2. The server now warns at start-up when the key looks like a phrase.</td></tr>
+<tr><td class="id">2</td><td class="sev-c">Critical</td><td>Super admin password is 6 digits in <code>.env</code>, and the code reset the account to that value at every login attempt and at every start (a password changed in the app was silently undone; every guess cost two slow hashes).</td><td><span class="chip fixed">Fixed</span> in code: the account is only created once, never rewritten. <span class="chip you">You</span> §3 step 3 to set a strong password.</td></tr>
+<tr><td class="id">3</td><td class="sev-h">High</td><td>Zip files hold real secrets, logs and the whole <code>.git</code>.</td><td><span class="chip you">You</span> §3 step 1.</td></tr>
+<tr><td class="id">4</td><td class="sev-h">High</td><td>Live and development share the database, signing key, Cloudinary and bank-gateway keys; the database password is short; network access list unknown.</td><td><span class="chip you">You</span> §3 step 5.</td></tr>
+<tr><td class="id">5</td><td class="sev-h">High</td><td><code>.env.production</code> is a template: live payment mode, placeholder return addresses anyone can register, <code>FRONTEND_URL</code> pointing at another project's server; the existing website build sends everything to <code>your-backend-url.onrender.com</code>.</td><td><span class="chip you">You</span> §3 steps 6–8. <span class="chip fixed">Guards added</span>: start-up warnings and a build that refuses to run.</td></tr>
+<tr><td class="id">6</td><td class="sev-h">High</td><td>A seed script (<code>npm run seed</code>) deleted and recreated an admin <code>a@gmail.com</code> with a trivial password in whatever database <code>.env</code> points at (the live one).</td><td><span class="chip fixed">Fixed</span> script removed (copy in <code>_backups\security-audit-pre\removed</code>). <span class="chip you">You</span> §3 step 4 to check the live data.</td></tr>
+<tr><td class="id">7</td><td class="sev-h">High</td><td>Stored script injection: the footer map address, footer buttons, social links, live-video address and payment-screenshot address accepted <code>javascript:</code>. A content-only admin could run script in the super admin's browser and steal the login.</td><td><span class="chip fixed">Fixed</span> server refuses such values everywhere; the footer, home page and donations screen also refuse them. Verified with poisoned data in a real browser.</td></tr>
+<tr><td class="id">8</td><td class="sev-h">High</td><td><code>POST /api/subscribe</code> let any signed-in person mail a comma-separated list of strangers from the temple's address, fill the subscriber list, and inject HTML into the admin mailbox.</td><td><span class="chip fixed">Fixed</span> own address only, rate limit, escaping; invalid old addresses are skipped when sending.</td></tr>
+<tr><td class="id">9</td><td class="sev-h">High</td><td>Names, booking types, contact messages and replies were put unescaped into HTML e-mails; booking fields had no validation; one "recipient" could hold several addresses.</td><td><span class="chip fixed">Fixed</span> escaping everywhere, strict booking checks, one-recipient rule in the shared mail function.</td></tr>
+<tr><td class="id">10</td><td class="sev-h">High</td><td>The secret part of the password-reset link was stored in the visitor analytics table and shown to analytics admins.</td><td><span class="chip fixed">Fixed</span> not sent, not stored. <span class="chip you">You</span> §3 step 10 for old rows.</td></tr>
+</table>
+
+<h3>Medium</h3>
+<table>
+<tr><th>#</th><th>Finding</th><th>Status and what was done</th></tr>
+<tr><td class="id">11</td><td>No <code>trust proxy</code>: behind Render every visitor looked like one address, so login/reset limits were shared by everybody (a stranger could lock the site's logins) and sign-in addresses were wrong.</td><td><span class="chip fixed">Fixed</span> (<code>TRUST_PROXY</code>, default one hop in production; use 2 if Cloudflare sits in front).</td></tr>
+<tr><td class="id">12</td><td>No security headers or HTTPS pinning; <code>/api/health</code>, <code>/</code> and 404 pages revealed memory, uptime, environment and route lists.</td><td><span class="chip fixed">Fixed</span> API. Website: <span class="chip part">file delivered</span> §3 step 9.</td></tr>
+<tr><td class="id">13</td><td>Weak password rule: 6 characters, "123456" and "password" accepted.</td><td><span class="chip fixed">Fixed</span> one rule everywhere.</td></tr>
+<tr><td class="id">14</td><td>Forgot-password and send-code revealed whether an e-mail has an account (404 vs 200).</td><td><span class="chip fixed">Fixed</span> (sign-up still says "already registered": normal trade-off).</td></tr>
+<tr><td class="id">15</td><td>4-digit reset code that could be re-requested for unlimited attempts; reset token reusable.</td><td><span class="chip fixed">Fixed</span> 6 digits, atomic guess counter (parallel guesses tested), per-account limits, single-use reset step.</td></tr>
+<tr><td class="id">16</td><td>No limit on creating accounts.</td><td><span class="chip fixed">Fixed</span> 20 an hour per address.</td></tr>
+<tr><td class="id">17</td><td>Backup ZIP download fetched any address that looked like an image (server-side request forgery from visitor-typed text).</td><td><span class="chip fixed">Fixed</span> only the temple's Cloudinary, https only, max 3 redirects.</td></tr>
+<tr><td class="id">18</td><td>Super-admin database tools could list, clear and drop any collection of the shared database (other applications' data) and showed password hashes.</td><td><span class="chip fixed">Fixed</span> own collections only, secret fields hidden, user records not deletable there.</td></tr>
+<tr><td class="id">19</td><td>Someone could register another person's e-mail first with their own password; the real owner's later Google / e-mail-code sign-in kept it.</td><td><span class="chip fixed">Fixed</span> (<code>emailVerified</code>; the old password is replaced once). <span class="chip acc">Recommended later</span>: verify the address at sign-up.</td></tr>
+<tr><td class="id">20</td><td>Any free account could upload 50 MB videos to the temple's Cloudinary plan.</td><td><span class="chip fixed">Fixed</span> picture-only uploader with size and hourly limits.</td></tr>
+<tr><td class="id">21</td><td>Visitor tracking trusted the client-sent <code>X-Forwarded-For</code> (fake or other people's addresses), accepted unbounded text, had no limit, sent addresses over plain http to a third party, and the stats page could load the whole table.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">22</td><td>Changing your password did not end other sessions; the password-change route had no attempt limit.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">23</td><td>The super-admin-only donation switches could be changed by a normal admin (the "restore" ran after the change).</td><td><span class="chip fixed">Fixed</span> and tested both ways.</td></tr>
+<tr><td class="id">24</td><td>Legacy booking route: date text bypassed per-day limits; free-form type and lengths.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">25</td><td>Thirty free sign-ups could push real booking and donation alerts out of the admin notifications.</td><td><span class="chip fixed">Fixed</span> (30 per type).</td></tr>
+<tr><td class="id">26</td><td>Admins on a temporary password could still read bookings, donations and users through routes that check the role by hand.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">27</td><td>Dockerfile: Node 18 (end of life), root user, <code>.env</code> copied into the image, no ignore file; <code>docker-compose</code> loaded the whole dev <code>.env</code>.</td><td><span class="chip fixed">Fixed</span> (not built here: Docker is not installed on this computer).</td></tr>
+<tr><td class="id">28</td><td>Outdated libraries with advisories: nodemailer, multer, axios, react-router, express/qs, brace-expansion, ip-address and others.</td><td><span class="chip fixed">Fixed</span> by updating; <span class="chip part">remaining</span> Cloudinary SDK (its upload plug-in blocks version 2) and <code>uuid</code> (not affected: only version 4 is used).</td></tr>
+<tr><td class="id">29</td><td>CORS allowed other projects' hosts, a placeholder and localhost in production.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">30</td><td>Login token is 30 days, stored in the browser, and logging out only forgets it locally.</td><td><span class="chip acc">Accepted</span> (you asked for saved logins). Mitigations: sessions can be revoked; recommended later: shorter staff tokens or secure cookies.</td></tr>
+<tr><td class="id">31</td><td>No content security policy on the website; one inline script handler would have broken a strict policy.</td><td><span class="chip fixed">Fixed</span> handler moved to <code>font-loader.js</code>; tested policy delivered in report-only form (§3 step 9).</td></tr>
+<tr><td class="id">32</td><td>Payment details: amounts such as "NaN"; a double confirmation could count a donation twice; configuration text in error messages; payment mode silently falls back to the sandbox if mis-typed.</td><td><span class="chip fixed">Fixed</span> first three; the last one is warned about at start-up.</td></tr>
+<tr><td class="id">33</td><td>The new per-account login limit could be used by a stranger to lock an account for 15 minutes.</td><td><span class="chip part">Improved</span>: only wrong passwords count, a correct sign-in clears the count, Google / e-mail code still work. A known trade-off of any lock-out.</td></tr>
+<tr><td class="id">34</td><td>Leftover logs and scratch scripts with phone numbers, booking references and a test admin; request logs included the query string.</td><td><span class="chip fixed">Fixed</span> moved to <code>_backups\security-audit-pre\removed</code>; logs show the path only.</td></tr>
+<tr><td class="id">35</td><td>One failed background task could stop the whole server (any unhandled error exited the process).</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">36</td><td>Dead Google redirect login put the login token in the address bar and linked accounts by e-mail alone (never reachable: the code was not loaded).</td><td><span class="chip fixed">Removed</span> with the unused session libraries.</td></tr>
+</table>
+
+<h3>Low and informational</h3>
+<table>
+<tr><th>#</th><th>Finding</th><th>Status</th></tr>
+<tr><td class="id">37</td><td>Source maps published with the build; stale <code>build\</code> folder.</td><td><span class="chip fixed">Fixed</span> (<code>GENERATE_SOURCEMAP=false</code>); <span class="chip you">You</span> delete the old folder.</td></tr>
+<tr><td class="id">38</td><td>Payment-gateway test logins shown to every visitor.</td><td><span class="chip fixed">Fixed</span> hidden in production builds.</td></tr>
+<tr><td class="id">39</td><td>Map frame sent full page addresses (including reset links) to Google.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">40</td><td>Booking PDF template put booking text into HTML unescaped (self-XSS); ids put into API paths unencoded.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">41</td><td>Unused legacy controllers/routes with weaker rules; unused <code>AuthCallback</code> page.</td><td><span class="chip fixed">Removed</span> (copies in <code>_backups</code>).</td></tr>
+<tr><td class="id">42</td><td>Booking reference made with <code>Math.random</code>; unbounded users list.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">43</td><td>Contact form accepted several addresses in the e-mail field.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">44</td><td>Public Facebook-link resolver had no limit.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">45</td><td><code>postinstall</code> script tried to download a file from the internet at install time.</td><td><span class="chip fixed">Removed</span>.</td></tr>
+<tr><td class="id">46</td><td>Public <code>/api/admin/settings</code> still returns the bank-detail fields even when "hide bank details" is on (the page hides them, the API does not). The newer donation endpoints do respect the switch.</td><td><span class="chip acc">Accepted</span>: the same data is shown on the donate page when enabled; fixing it needs a signed-in variant of that endpoint.</td></tr>
+<tr><td class="id">47</td><td>Public blog route returns drafts by id; public counters (views/shares) are writable without login.</td><td><span class="chip part">Open (low)</span></td></tr>
+<tr><td class="id">48</td><td>Chat messages and donation notes have no length cap; payment start has no per-user limit; backup list returns full data; restore is not transactional.</td><td><span class="chip part">Open (low)</span></td></tr>
+<tr><td class="id">49</td><td>Some admin/cloud error messages still return internal text; booking lookup uses the address bar (<code>?ref=&amp;phone=</code>).</td><td><span class="chip part">Open (low)</span> logs no longer record it.</td></tr>
+<tr><td class="id">50</td><td>The login token can be renewed forever by a stolen session that keeps visiting; staff have no two-step sign-in.</td><td><span class="chip part">Recommended</span> see §5.</td></tr>
+<tr><td class="id">51</td><td>Maintenance-mode screen is only a cover on the website (the API stays reachable); chatbot data file lists named people's e-mails and phone numbers in the public script.</td><td><span class="chip acc">Accepted / confirm consent</span></td></tr>
+</table>
+
+<h3>Problems found in my own first fixes (second, independent review)</h3>
+<p class="muted">After the fixes were written, a separate reviewer went through every change looking for regressions and ways around the new protections. It found 13 problems in the first version of the fixes; all were checked in the code, 12 were fixed and re-tested, 1 is accepted.</p>
+<table>
+<tr><th>#</th><th>Finding in the first version of the fixes</th><th>Status</th></tr>
+<tr><td class="id">R1</td><td><b>High:</b> the new "valid ceremony" check on bookings rejected every booking made from the Nepali, Hindi, Chinese or Tamil screens (the page sent the translated name).</td><td><span class="chip fixed">Fixed</span> the page now shows the local-language name but sends the stored English one. Checked in a browser.</td></tr>
+<tr><td class="id">R2</td><td>The unsafe-link check took about a second on a 5 MB request, and ran before the rate limit, so it could be used to slow the server.</td><td><span class="chip fixed">Fixed</span> it now reads only the start of each value (2 ms) and the rate limit runs first.</td></tr>
+<tr><td class="id">R3</td><td>Every existing password account counted as "not verified", so its first Google / e-mail-code sign-in removed the password, with no message on the code path.</td><td><span class="chip fixed">Fixed</span> Google accounts are marked verified at start-up, and the code sign-in now e-mails a notice.</td></tr>
+<tr><td class="id">R4</td><td>An admin could wipe the donation section by saving <code>{"donate": null}</code>.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">R5</td><td>Forgot-password still answered slower for registered addresses (the reply waited for the mail server).</td><td><span class="chip fixed">Fixed</span> the reply is sent first, the mail afterwards.</td></tr>
+<tr><td class="id">R6</td><td>Text fields sent together with a file upload skipped the injection and unsafe-link checks.</td><td><span class="chip fixed">Fixed</span> all upload routes run them.</td></tr>
+<tr><td class="id">R7</td><td>The payment-screenshot check accepted any Cloudinary file, including another account's non-image files.</td><td><span class="chip fixed">Fixed</span> our own account, images only.</td></tr>
+<tr><td class="id">R8</td><td>Many wrong passwords sent in parallel were all checked before the lock-out noticed.</td><td><span class="chip fixed">Fixed</span> attempts are counted first (40 parallel guesses: 30 stopped).</td></tr>
+<tr><td class="id">R9</td><td>The public settings address still returns the bank-detail fields when "hide bank details" is on.</td><td><span class="chip acc">Accepted</span> see #46; hiding them there would blank the admin form and could erase the saved values.</td></tr>
+<tr><td class="id">R10</td><td>Ordinary text starting with "Data:" (for example a booking note "Data: 5 people coming") was refused as an address.</td><td><span class="chip fixed">Fixed</span> only a real data link is refused.</td></tr>
+<tr><td class="id">R11</td><td>Subscribing with another person's address gave only a generic "failed" message.</td><td><span class="chip fixed">Fixed</span> the reason is shown.</td></tr>
+<tr><td class="id">R12</td><td>A footer path such as "/&lt;tab&gt;/evil.com" could become an address on another site.</td><td><span class="chip fixed">Fixed</span>.</td></tr>
+<tr><td class="id">R13</td><td>Sign-up accepted names (51–100 characters) and addresses (<code>a@b.c</code>) that the database later refused, giving a "Server error".</td><td><span class="chip fixed">Fixed</span> same limits as the database.</td></tr>
+</table>
+<p class="muted">Also adjusted after that review: the per-address login and reset limits were raised (60 and 30 per 15 minutes) because many phones share one address on mobile networks and the per-account limits already protect individual accounts; and the API's own "stop this reminder" page may now post back to the API (it was being refused by the new cross-site rule).</p>
+
+<h2>5. Recommended next steps (not done)</h2>
+<ol>
+  <li><b>Two-step sign-in for the super admin and admins</b> (authenticator app or passkey). This is the single biggest protection left.</li>
+  <li><b>Verify e-mail addresses at sign-up</b> (a link or code) before an account can send mail or make bookings.</li>
+  <li><b>Shorter staff sessions</b> (for example 12 hours) or secure cookies for the admin panel instead of the 30-day token in browser storage.</li>
+  <li>Move the website build away from Create React App (no longer maintained) to Vite; this clears most of the 70 remaining build-tool warnings.</li>
+  <li>A <b>monthly routine</b>: <code>npm audit</code> in both folders, update, run the tests in <code>_dev-tools\security-audit\tests</code>.</li>
+  <li>Put the site behind Cloudflare (free plan) for bot filtering and DDoS protection, and turn on Atlas alerts for failed logins and unusual traffic.</li>
+  <li>If the API ever runs on more than one server, replace the in-memory rate limiter with a shared one.</li>
+</ol>
+
+<h2>6. How this was checked</h2>
+<ul>
+  <li><b>Three independent read-only reviews</b> (server code, website code, secrets and deployment files) produced the findings; each claim I acted on was re-checked in the real files first (for example the secret shapes, the Dockerfile, the footer code, the donation-switch bug).</li>
+  <li><b>Live attack tests on a throw-away server</b> (own database on a different port, mail, payment and Cloudinary switched off): injection, forged tokens (<code>alg:none</code>, wrong key, expired), cross-account access, role escalation, cross-site calls, oversized and malformed requests, file-disclosure paths, rate limits, and all 256 routes called as visitor and as ordinary user. <b>112 checks (three suites), all pass.</b>
+    <ul><li>The first run found real gaps (headers, enumeration, weak passwords); the re-runs after the fixes confirm they are closed.</li></ul></li>
+  <li><b>Browser tests</b> with headless Chrome: poisoned map, footer and live-video values are neutralised, nothing executes, the 6-box reset code accepts a pasted code, and the booking list shows Nepali names while sending the stored English value. <b>11 checks, all pass.</b></li>
+  <li><b>Content-policy trial</b> across 15 pages: no violations except the development hot-reload socket.</li>
+  <li>An <b>independent review of the fixes themselves</b> was run afterwards: it found 13 problems in the first version of the fixes (section 4, last table); 12 were fixed and re-tested, one accepted. It also checked about 60 other things and found them sound.</li>
+  <li><b>Upload limits</b> were proven with the real upload code and the upgraded multer library, Cloudinary itself replaced by a stand-in: 5 MB / 10 MB caps, no video, SVG or GIF, one file only (9 checks, all pass).</li>
+  <li><b>Not tested:</b> real e-mail delivery after the mail-library upgrade; uploads to the real Cloudinary account; real eSewa/Khalti/ConnectIPS payments; the Docker image build; a full production website build with the headers on the real host. Please test those once after deploying.</li>
+</ul>
+<p class="muted">Tests and tools are kept in <code>_dev-tools\security-audit\</code> (<code>tests\</code> for the automatic checks). Pre-change copies of every file touched are in <code>_backups\security-audit-pre\</code>. Both folders can be deleted when you no longer need them, but keep them out of zips and out of git.</p>
+
+<h2>7. Files changed</h2>
+<p><b>Server</b> (<code>backend\backend</code>): <code>server.js</code>, <code>package.json</code> (+ lock), <code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>.gitignore</code>, <code>.dockerignore</code>, <code>.env.example</code>, <code>scripts\resetAdminPassword.js</code>; <code>src\app.js</code>; middleware: <code>securityHeaders</code>, <code>sanitizeInput</code>, <code>rejectUnsafeUrls</code>, <code>uploadUserImage</code>, <code>guardMultipart</code> (new), <code>rateLimit</code>, <code>errorHandler</code>, <code>permissions</code>, <code>upload</code>; utils: <code>passwordPolicy</code>, <code>escapeHtml</code>, <code>loginThrottle</code>, <code>startupChecks</code> (new); controllers: <code>auth</code>, <code>loginCode</code>, <code>account</code>, <code>adminProfile</code>, <code>admin</code>, <code>payment</code>, <code>superAdmin</code>, <code>visitor</code>, <code>notification</code>; routes: <code>auth</code>, <code>user</code>, <code>donation</code>, <code>booking</code>, <code>contact</code>, <code>subscribe</code>, <code>visitor</code>, <code>admin</code>, <code>backup</code>, <code>reminder</code>, <code>templeBooking</code>; models: <code>User</code>, <code>Subscriber</code>; services: <code>emailService</code>.</p>
+<p><b>Website</b> (<code>frontend\frontend</code>): <code>src\utils\safeUrl.js</code> (new), <code>Footer</code>, <code>HomePage</code>, <code>DonatePage</code>, <code>DynamicPage</code>, <code>MyBookingsPage</code>, <code>BookingPage</code>, <code>SubscribeCard</code>, <code>BlogDetail</code>, <code>ResetPasswordPage</code>, <code>AdminDonations</code>, <code>AdminAccounts</code>, <code>AccountDialogs</code>, <code>AuthModal</code>, <code>ForgotPasswordModal</code>, <code>VisitorContext</code>, <code>AuthContext</code>; <code>public\index.html</code>, <code>public\font-loader.js</code>, <code>public\_headers</code>; <code>scripts\check-build-env.cjs</code>; <code>package.json</code>, <code>.env.production</code> (source maps off).</p>
+
+</div>
+</body>
+</html>

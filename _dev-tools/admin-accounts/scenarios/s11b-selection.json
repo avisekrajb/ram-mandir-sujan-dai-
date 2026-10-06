@@ -1,0 +1,57 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "super"
+    },
+    {
+      "nav": "http://localhost:4600/admin/users",
+      "after": 6000
+    },
+    {
+      "eval": "[...document.querySelectorAll(\"input[aria-label='Select Anita Gurung']\")].find(e => e.offsetParent).click()"
+    },
+    {
+      "eval": "[...document.querySelectorAll(\"input[aria-label='Select Indira Shrestha']\")].find(e => e.offsetParent).click()"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "log": "'selected bar: ' + (document.querySelector('[role=status]') ? document.querySelector('[role=status]').innerText.split('\\n')[0] : 'none')"
+    },
+    {
+      "eval": "window.__done = false; (async () => { const tok = localStorage.getItem('token'); const h = { Authorization: 'Bearer ' + tok }; const r = await (await fetch('/api/admin/accounts?q=Indira%20Shrestha', { headers: h })).json(); const id = r.data[0]._id; const d = await fetch('/api/admin/accounts/' + id, { method: 'DELETE', headers: h }); window.__done = d.status; })()"
+    },
+    {
+      "wait": 1200
+    },
+    {
+      "log": "'Indira deleted behind the page, status ' + window.__done"
+    },
+    {
+      "click": "button[aria-label='Actions: Gita Poudel']",
+      "after": 700
+    },
+    {
+      "eval": "[...document.querySelectorAll('[role=menuitem]')].find(e => /Reactivate/.test(e.innerText)).click()"
+    },
+    {
+      "wait": 2500
+    },
+    {
+      "log": "'after list reload (expect 1 selected, Indira is gone): ' + (document.querySelector('[role=status]') ? document.querySelector('[role=status]').innerText.split('\\n')[0] : 'bar hidden')"
+    },
+    {
+      "log": "(() => { const t = document.querySelector('.z-\\\\[10200\\\\]'); return t ? 'toast layer z-index=' + getComputedStyle(t).zIndex + ' text=' + t.innerText.trim() : 'no toast visible'; })()"
+    },
+    {
+      "shot": "31-after-reload-toast.png"
+    }
+  ]
+}

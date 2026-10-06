@@ -1,0 +1,35 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 4500 },
+
+    { "click": "button[aria-label='Actions: Bikash Rai']" },
+    { "click": "text=Suspend", "after": 700 },
+    { "shot": "07-suspend-dialog.png" },
+    { "type": ["#confirm-reason", "Repeated spam bookings"] },
+    { "click": "text=Suspend", "after": 1500 },
+    { "log": "JSON.stringify([...document.querySelectorAll('tbody tr')].slice(0,3).map(r=>r.innerText.replace(/\\s+/g,' ').slice(0,80)))" },
+
+    { "click": "tbody tr:nth-child(3) input[type=checkbox]" },
+    { "click": "tbody tr:nth-child(4) input[type=checkbox]", "after": 600 },
+    { "shot": "08-bulk-bar.png" },
+    { "eval": "location.href='/admin/users'" },
+    { "wait": 3500 },
+
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true}))" },
+    { "wait": 600 },
+    { "type": ["[role=combobox]", "bik"], "after": 1200 },
+    { "shot": "09-palette.png" },
+    { "eval": "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))" },
+
+    { "nav": "http://localhost:4600/admin/access", "after": 4000 },
+    { "shot": "10-access.png" },
+    { "nav": "http://localhost:4600/admin/audit", "after": 4000 },
+    { "shot": "11-audit.png" },
+    { "nav": "http://localhost:4600/admin/profile", "after": 4000 },
+    { "shot": "12-profile.png", "fullPage": true }
+  ]
+}

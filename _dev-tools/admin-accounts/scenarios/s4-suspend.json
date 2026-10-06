@@ -1,0 +1,16 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 5000 },
+    { "click": "button[aria-label='Actions: Chandra Magar']", "after": 800 },
+    { "log": "[...document.querySelectorAll('[role=menuitem]')].map(e=>e.innerText).join('|')" },
+    { "click": "text=Suspend", "after": 1500 },
+    { "log": "document.querySelector('[role=dialog]') ? document.querySelector('[role=dialog]').innerText.slice(0,300) : 'NO DIALOG'" },
+    { "shot": "07b-suspend-dialog.png" },
+    { "type": ["#confirm-reason", "Repeated spam bookings"] },
+    { "log": "document.querySelector('#confirm-reason') && document.querySelector('#confirm-reason').value" }
+  ]
+}

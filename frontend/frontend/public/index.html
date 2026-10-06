@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- ==============================================================
+         TITLE, DESCRIPTION AND SEARCH
+
+         The tags below are the defaults a crawler sees before any
+         JavaScript runs. The app (utils/seo.js) rewrites them for each
+         page and language, and scripts/seo.cjs writes a copy of
+         this file with the right values for every public route, so
+         Facebook, WhatsApp, X and Bing see page-specific tags too.
+
+         The public address comes from REACT_APP_SITE_URL (.env files).
+         ============================================================== -->
+    <title>Shree Ramchandra Temple, Battisputali, Kathmandu</title>
+    <meta name="description" content="Official website of Shree Ramchandra Temple, Battisputali, Kathmandu: aarti and darshan timings, events, history, gallery, online donation and puja booking." />
+    <meta name="keywords" content="Shree Ramchandra Temple, Ram Mandir Kathmandu, Battisputali temple, Gaushala, Ram Navami, aarti timings, Hindu temple Kathmandu, श्री रामचन्द्र मन्दिर" />
+    <meta name="author" content="Shree Ramchandra Temple" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="application-name" content="Shree Ramchandra Temple" />
+
+    <!-- Search console verification: add the tag each service gives you, for example
+         <meta name="google-site-verification" content="..." />
+         <meta name="msvalidate.01" content="..." />   (Bing)
+         <meta name="yandex-verification" content="..." /> -->
+
+    <!-- ==============================================================
+         OPEN GRAPH (Facebook, WhatsApp, LinkedIn, Telegram) AND X / TWITTER
+         ============================================================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Shree Ramchandra Temple" />
+    <meta property="og:title" content="Shree Ramchandra Temple, Battisputali, Kathmandu" />
+    <meta property="og:description" content="Official website of Shree Ramchandra Temple, Battisputali, Kathmandu: aarti and darshan timings, events, history, gallery, online donation and puja booking." />
+    <meta property="og:image" content="%REACT_APP_SITE_URL%/og-image.jpg" />
+    <meta property="og:image:secure_url" content="%REACT_APP_SITE_URL%/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Shree Ramchandra Temple, Battisputali, Kathmandu" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ne_NP" />
+    <meta property="og:locale:alternate" content="hi_IN" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="ta_IN" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Shree Ramchandra Temple, Battisputali, Kathmandu" />
+    <meta name="twitter:description" content="Official website of Shree Ramchandra Temple, Battisputali, Kathmandu: aarti and darshan timings, events, history, gallery, online donation and puja booking." />
+    <meta name="twitter:image" content="%REACT_APP_SITE_URL%/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Shree Ramchandra Temple, Battisputali, Kathmandu" />
+
+    <!-- ==============================================================
+         BROWSERS AND DEVICES: icons, colours, install and tile settings
+         ============================================================== -->
+    <meta name="theme-color" content="#A80808" />
+    <meta name="color-scheme" content="light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Ramchandra Temple" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="msapplication-TileColor" content="#A80808" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/logo.png" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- Tab / address-bar icon: the temple logo (spires only at these sizes, the full logo is too small to read).
+         The ?v= is there because browsers keep an old favicon for a long time; change it when the icon changes.
+         Larger icons (192 / 512 / maskable) are listed in manifest.webmanifest, not here, so a browser never
+         picks a big one for the tab. -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico?v=2" sizes="48x48 32x32 16x16" />
+    <link rel="icon" type="image/png" sizes="48x48" href="%PUBLIC_URL%/favicon-48.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=2" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.webmanifest" />
+
+    <!-- ==============================================================
+         STRUCTURED DATA (Google): the site and the temple. The telephone
+         number and the daily opening hours are left out until the
+         temple's own are confirmed; add "telephone" and
+         "openingHoursSpecification" to the HinduTemple entry then.
+         ============================================================== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "%REACT_APP_SITE_URL%/#website",
+          "url": "%REACT_APP_SITE_URL%/",
+          "name": "Shree Ramchandra Temple",
+          "inLanguage": ["en", "ne", "hi", "zh", "ta"],
+          "publisher": { "@id": "%REACT_APP_SITE_URL%/#temple" }
+        },
+        {
+          "@type": "HinduTemple",
+          "@id": "%REACT_APP_SITE_URL%/#temple",
+          "name": "Shree Ramchandra Temple",
+          "alternateName": ["श्री रामचन्द्र मन्दिर", "Shri Ram Chandra Temple", "Ram Mandir Battisputali"],
+          "description": "A Vaishnava temple dedicated to Lord Ram, Sita and Lakshman in Battisputali, Gaushala, Kathmandu, founded in 1928 B.S. by Commander Colonel Sanak Singh Tandon.",
+          "url": "%REACT_APP_SITE_URL%/",
+          "logo": "%REACT_APP_SITE_URL%/logo.png",
+          "image": "%REACT_APP_SITE_URL%/og-image.jpg",
+          "email": "info@ramchandratemple.org.np",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Battisputali, Gaushala",
+            "addressLocality": "Kathmandu",
+            "addressCountry": "NP"
+          },
+          "founder": { "@type": "Person", "name": "Sanak Singh Tandon" },
+          "sameAs": [
+            "https://facebook.com/shreramchandratemple",
+            "https://instagram.com/shreramchandratemple",
+            "https://youtube.com/@shreramchandratemple"
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <!-- ==============================================================
+         PRECONNECT / DNS PREFETCH
+
+         The first render needs three third-party origins: Google Fonts
+         (CSS, then the font files), the API host, and Cloudinary for
+         gallery photos. Opening the sockets during HTML parse instead of
+         waiting for CSS/JS to execute removes a serial round trip from
+         the critical path.
+
+         crossorigin is required on font preconnects: font files are
+         fetched with CORS, and a preconnect opened without it is not
+         reused, which quietly defeats it.
+         ============================================================== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+
+    <!--
+      Webfonts are linked directly from the HTML rather than @import-ed from
+      index.css (an @import is only found after the importing stylesheet has been
+      downloaded and parsed), and they are loaded without blocking the first paint:
+      the stylesheet is requested as a preload and turned into a stylesheet when it
+      arrives, with the noscript line as the fallback. display=swap shows the text
+      in the system font straight away and switches when the font is ready.
+
+      Keep this list in sync with the .temple-heading / .hero-tagline rules in
+      index.css, which also reference Mukta.
+    -->
+    <!-- The switch from preload to stylesheet is done by /font-loader.js, not by an inline onload="..."
+         attribute: a strict Content-Security-Policy (script-src 'self') refuses inline handlers. -->
+    <link
+      id="webfont-css"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Mukta:wght@400;500;600;700;800&family=Noto+Serif+Devanagari:wght@500;600;700&display=swap"
+    />
+    <script src="%PUBLIC_URL%/font-loader.js" defer></script>
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Mukta:wght@400;500;600;700;800&family=Noto+Serif+Devanagari:wght@500;600;700&display=swap"
+      />
+    </noscript>
+
+    <!-- What shows from the first byte, before the JavaScript has loaded: the page is white with the
+         temple's name and a small spinner, like the app's own loading screen. -->
+    <style>
+      html, body { margin: 0; background: #fff; }
+      #boot { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; font-family: Georgia, 'Times New Roman', serif; color: #A80808; text-align: center; padding: 0 24px; }
+      #boot strong { font-size: 22px; font-weight: 600; letter-spacing: .2px; }
+      #boot i { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #E9E1DF; border-top-color: #A80808; animation: boot-spin .9s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #boot i { animation-duration: 3s; } }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <main style="max-width:44rem;margin:0 auto;padding:32px 20px;font-family:Georgia,serif;line-height:1.6;color:#1c1717">
+        <h1 style="color:#A80808">Shree Ramchandra Temple, Battisputali, Kathmandu</h1>
+        <p>Official website of Shree Ramchandra Temple: aarti and darshan timings, events, history, gallery, online donation and puja booking. Please turn on JavaScript to use this site.</p>
+        <nav aria-label="Main">
+          <a href="%PUBLIC_URL%/about">About</a> ·
+          <a href="%PUBLIC_URL%/history">History</a> ·
+          <a href="%PUBLIC_URL%/events">Events</a> ·
+          <a href="%PUBLIC_URL%/gallery">Gallery</a> ·
+          <a href="%PUBLIC_URL%/templeteams">Committee</a> ·
+          <a href="%PUBLIC_URL%/donate">Donate</a> ·
+          <a href="%PUBLIC_URL%/contact">Contact</a>
+        </nav>
+      </main>
+    </noscript>
+    <div id="root">
+      <div id="boot" role="status" aria-label="Loading">
+        <i aria-hidden="true"></i>
+        <strong>Shree Ramchandra Temple</strong>
+      </div>
+    </div>
+  </body>
+</html>

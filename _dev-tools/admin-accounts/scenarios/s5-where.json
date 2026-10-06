@@ -1,0 +1,11 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 3500 },
+    { "log": "JSON.stringify({href: location.href, scripts: [...document.scripts].map(s=>s.src).filter(Boolean)})" },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 4000 },
+    { "log": "JSON.stringify({href: location.href, scripts: [...document.scripts].map(s=>s.src).filter(Boolean)})" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 8000 },
+    { "click": "button[aria-label='Next page']", "after": 2000 },
+    { "log": "'page 2 rows: ' + document.querySelectorAll('tbody tr').length + ' first: ' + (document.querySelector('tbody tr') ? document.querySelector('tbody tr').innerText.split('\\n')[1] : 'none')" },
+    { "eval": "window.__mark = performance.getEntriesByType('resource').length; 'ok'" },
+    { "eval": "(() => { const sel = [...document.querySelectorAll('select')].find(s => [...s.options].some(o => o.value === 'suspended')); const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(sel, 'suspended'); sel.dispatchEvent(new Event('change', { bubbles: true })); })()" },
+    { "wait": 2500 },
+    { "log": "'list requests after filter change (expect exactly 1): ' + performance.getEntriesByType('resource').slice(window.__mark).map(r => r.name.replace(location.origin, '')).filter(n => n.includes('/api/admin/accounts?')).join('  ||  ')" },
+    { "log": "'rows now: ' + [...document.querySelectorAll('tbody tr')].map(r => r.innerText.split('\\n')[1]).join(', ')" }
+  ]
+}

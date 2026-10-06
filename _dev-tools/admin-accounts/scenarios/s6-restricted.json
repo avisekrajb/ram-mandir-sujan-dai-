@@ -1,0 +1,63 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "super"
+    },
+    {
+      "nav": "http://localhost:4600/admin/overview",
+      "after": 6000
+    },
+    {
+      "eval": "window.__set=(sel,val)=>{const el=document.querySelector(sel);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val);el.dispatchEvent(new Event('input',{bubbles:true}));}; (async()=>{const tok=localStorage.getItem('token'); const r=await fetch('/api/admin/accounts',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({name:'Content Editor',email:'editor'+Date.now()+'@test.local',role:'admin',generatePassword:true,permissions:['content','contact']})}); const j=await r.json(); window.__tp=j.temporaryPassword; localStorage.setItem(\"__tp\", j.temporaryPassword); window.__email=j.data.email; const l=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:j.data.email,password:j.temporaryPassword})}); const lj=await l.json(); localStorage.setItem('token',lj.token); localStorage.setItem('user',JSON.stringify(lj.user)); return 'created '+j.data.email+' '+JSON.stringify(lj.user.permissions)+' must='+lj.user.mustChangePassword;})()"
+    },
+    {
+      "log": "window.__email + ' ' + (window.__tp ? window.__tp.length : 'no tp')"
+    },
+    {
+      "nav": "http://localhost:4600/admin/overview",
+      "after": 5000
+    },
+    {
+      "shot": "14-force-change.png"
+    },
+    {
+      "eval": "window.__set=(sel,val)=>{const el=document.querySelector(sel);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val);el.dispatchEvent(new Event('input',{bubbles:true}));}; window.__set('#pc-current', localStorage.getItem('__tp')); window.__set('#pc-next','Temple-Editor-2026'); window.__set('#pc-confirm','Temple-Editor-2026');"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "shot": "15-force-change-filled.png"
+    },
+    {
+      "click": "text=Save and continue",
+      "after": 3500
+    },
+    {
+      "nav": "http://localhost:4600/admin/overview",
+      "after": 6000
+    },
+    {
+      "shot": "16-overview-restricted.png"
+    },
+    {
+      "log": "JSON.stringify([...document.querySelectorAll('aside nav a')].map(a=>a.getAttribute('href')))"
+    },
+    {
+      "nav": "http://localhost:4600/admin/bookings",
+      "after": 3000
+    },
+    {
+      "shot": "17-no-access.png"
+    },
+    {
+      "log": "document.querySelector('main, .content-scroll') ? document.querySelector('.content-scroll').innerText.slice(0,200) : ''"
+    }
+  ]
+}

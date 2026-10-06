@@ -1,0 +1,37 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 6000 },
+
+    { "eval": "[...document.querySelectorAll(\"input[aria-label='Select Anita Gurung']\")].find(e => e.offsetParent).click()" },
+    { "eval": "[...document.querySelectorAll(\"input[aria-label='Select Hari Basnet']\")].find(e => e.offsetParent).click()" },
+    { "wait": 400 },
+    { "log": "'selected bar: ' + (document.querySelector('[role=status]') ? document.querySelector('[role=status]').innerText.split('\\n')[0] : 'none')" },
+
+    { "eval": "window.__done = false; (async () => { const tok = localStorage.getItem('token'); const h = { Authorization: 'Bearer ' + tok }; const r = await (await fetch('/api/admin/accounts?q=Hari%20Basnet', { headers: h })).json(); const id = r.data[0]._id; const d = await fetch('/api/admin/accounts/' + id, { method: 'DELETE', headers: h }); window.__done = d.status; })()" },
+    { "wait": 1200 },
+    { "log": "'Hari deleted behind the page, status ' + window.__done" },
+
+    { "click": "button[aria-label='Actions: Gita Poudel']", "after": 700 },
+    { "click": "text=Reactivate", "after": 2500 },
+    { "log": "'after list reload (expect 1 selected, Hari is gone): ' + (document.querySelector('[role=status]') ? document.querySelector('[role=status]').innerText.split('\\n')[0] : 'bar hidden')" },
+    { "log": "(() => { const t = document.querySelector('.z-\\\\[10200\\\\]'); return t ? 'toast layer z-index=' + getComputedStyle(t).zIndex + ' text=' + t.innerText.trim() : 'no toast visible'; })()" },
+    { "shot": "31-after-reload-toast.png" },
+
+    { "eval": "[...document.querySelectorAll('button')].find(b => /Add account/.test(b.innerText) && b.offsetParent).click()" },
+    { "wait": 900 },
+    { "click": "text=Admin", "after": 600 },
+    { "log": "(() => { const b = document.querySelector('button[form=account-form]'); return 'new admin: Create disabled=' + b.disabled + ' hint=' + (document.body.innerText.includes('Choose at least one area') ? 'shown' : 'MISSING'); })()" },
+    { "shot": "32-new-admin-default.png" },
+    { "click": "[role=dialog] [role=checkbox]", "after": 500 },
+    { "log": "(() => { const b = document.querySelector('button[form=account-form]'); return 'after choosing an area: Create disabled=' + b.disabled; })()" },
+    { "key": "Escape", "after": 600 },
+    { "click": "button[aria-label='Actions: Chandra Magar']", "after": 600 },
+    { "click": "text=Make admin", "after": 900 },
+    { "log": "(() => { const b = [...document.querySelectorAll('[role=dialog] button')].find(x => x.innerText.trim() === 'Make admin'); return 'promote dialog: Make admin disabled=' + b.disabled; })()" },
+    { "key": "Escape", "after": 500 }
+  ]
+}

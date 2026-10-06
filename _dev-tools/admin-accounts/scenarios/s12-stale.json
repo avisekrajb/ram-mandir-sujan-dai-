@@ -1,0 +1,35 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "admin"
+    },
+    {
+      "nav": "http://localhost:4600/admin",
+      "after": 7000
+    },
+    {
+      "log": "'API calls on load: ' + performance.getEntriesByType('resource').map(r => r.name.replace(location.origin, '')).filter(n => n.startsWith('/api/admin') || n.startsWith('/api/events')).join(' , ')"
+    },
+    {
+      "log": "'forbidden-area calls (expect 0): ' + performance.getEntriesByType('resource').map(r => r.name).filter(n => //api/admin/(users|donations|bookings)$/.test(n)).length"
+    },
+    {
+      "log": "'error toast on screen: ' + (document.body.innerText.includes('could not be loaded') ? 'YES' : 'no')"
+    },
+    {
+      "log": "'nav shows Users: ' + !!document.querySelector('a[href=\"/admin/users\"]') + ', Bookings: ' + !!document.querySelector('a[href=\"/admin/bookings\"]') + ', Home Settings: ' + !!document.querySelector('a[href=\"/admin/home\"]')"
+    },
+    {
+      "log": "'stored copy now lists content only: ' + localStorage.getItem('user').includes('\"permissions\":[\"content\"]')"
+    },
+    {
+      "shot": "33-stale-access.png"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Client edition (FINAL): python diagram2.py <outdir>; python build.py <outdir> <basename>; node to_pdf.js <html> <pdf>. Edit wording in content.py. content_v2.py is the longer technical v2.0 text (cPanel checklist; diagram.py draws its picture). Needs python-docx and Chrome.

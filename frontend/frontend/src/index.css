@@ -1,0 +1,2657 @@
+/*
+ * Webfonts are loaded via <link> tags in public/index.html rather than with an
+ * @import here. A CSS @import is only discovered after this stylesheet has been
+ * downloaded and parsed, which puts the font request in the critical path and
+ * delays first paint.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Mirrors tailwind.config.js: white + the logo crimson (#A80808). */
+  :root {
+    --logo: #A80808;
+    --maroon: #820606;
+    --maroon-deep: #660505;
+    --vermilion: #A80808;
+    --marigold: #E2DBD8;
+    --leaf: #660505;
+    --ink: #1C1717;
+    --ink-soft: #5E5757;
+    --mute: #6F6868;
+    --line: #ECE5E4;
+    --panel: #FBF8F8;
+    --white: #ffffff;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(28, 23, 23, 0.04), 0 10px 28px -14px rgba(28, 23, 23, 0.16);
+    --header-h: 72px;
+    --font-sans: 'Inter', 'Mukta', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-serif: 'Fraunces', 'Mukta', Georgia, serif;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    /* Native checkboxes, radios, range sliders and progress bars in the logo colour. */
+    accent-color: var(--logo);
+    color: var(--ink);
+    background: var(--white);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* clip, not hidden: hidden would turn the body into its own scroll container and break position: sticky */
+    overflow-x: hidden;
+    overflow-x: clip;
+    width: 100%;
+  }
+  
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  /* 16px root on every screen: the standard reading size, and form fields
+     below 16px make iOS Safari zoom in on focus. (It used to shrink to
+     14.5px on phones, which made text-sm body copy ~12.7px.) */
+  html {
+    /* --text-scale is set by the text-size control (1 / 1.15 / 1.3) */
+    font-size: calc(16px * var(--text-scale, 1));
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  ::selection {
+    background: #E2DBD8;
+    color: #4A0404;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--logo);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .rt-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14;
+  }
+  
+  .rt-btn {
+    @apply inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap;
+  }
+  
+  @media (max-width: 640px) {
+    .rt-btn {
+      font-size: 0.85rem;
+      padding: 0.6rem 1.2rem;
+    }
+  }
+  
+  .rt-btn-primary {
+    @apply bg-vermilion text-white shadow-lg shadow-black/10 hover:bg-[#820606] hover:-translate-y-0.5;
+  }
+  
+  .rt-btn-outline {
+    @apply bg-transparent border-2 border-maroon text-maroon hover:bg-maroon hover:text-white;
+  }
+  
+  .rt-btn-ghost {
+    @apply bg-line text-ink hover:bg-[#d0d0d5];
+  }
+  
+  .rt-btn-ghost-light {
+    @apply bg-white/20 text-white border border-white/50 backdrop-blur-sm hover:bg-white/30;
+  }
+  
+  .rt-btn-full {
+    @apply w-full justify-center;
+  }
+  
+  .rt-card {
+    @apply bg-white border border-line rounded-rt shadow-rt p-4 sm:p-6;
+  }
+  
+  .rt-header {
+    @apply fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-md shadow-sm;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+  }
+
+  .rt-header-hidden {
+    transform: translateY(-100%);
+  }
+  
+  /* ---- Header / navigation (see components/common/header) ---- */
+  .nav-link {
+    @apply inline-flex min-h-[2.75rem] items-center gap-1 rounded-full px-3 text-[15px] font-semibold text-ink transition-colors duration-200 whitespace-nowrap hover:bg-brand-50 hover:text-vermilion xl:px-3.5 xl:text-base;
+  }
+  .nav-link-active {
+    @apply bg-brand-50 font-bold text-vermilion;
+  }
+  .menu-item {
+    @apply flex min-h-[2.75rem] w-full items-center gap-3 rounded-lg px-3 text-left text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-panel hover:text-vermilion;
+  }
+  .menu-item.active {
+    @apply bg-brand-50 text-vermilion;
+  }
+  .icon-btn {
+    @apply inline-flex h-11 min-w-[2.75rem] items-center justify-center rounded-full border border-line bg-white text-ink transition-colors duration-200 hover:border-vermilion hover:text-vermilion;
+  }
+  .btn-primary {
+    @apply inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-vermilion px-5 text-sm font-semibold text-white shadow-sm shadow-black/10 transition-colors duration-200 hover:bg-brand-700 focus-visible:outline-none;
+  }
+  .btn-outline {
+    @apply inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition-colors duration-200 hover:border-vermilion hover:text-vermilion;
+  }
+  .animate-dropdown {
+    animation: dropdown-in 160ms ease-out both;
+  }
+  @keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rt-header-spacer {
+    @apply h-16 sm:h-16;
+  }
+}
+
+/* ============================================
+   LOGO TEXT - INCREASED FOR BOTH MOBILE & DESKTOP
+   ============================================ */
+
+.logo-text {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+@media (max-width: 1024px) {
+  .logo-text {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .logo-text {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .logo-text {
+    font-size: 1.5rem !important;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 1.15rem !important;
+  }
+}
+
+/* ============================================
+   DEVANAGARI TEXT FIX - prevents clipping of
+   Nepali/Hindi glyphs (matras, ascenders) in
+   headings and tight containers
+   ============================================ */
+html[lang="ne"],
+html[lang="hi"] {
+  line-height: 1.55;
+}
+
+html[lang="ne"] h1,
+html[lang="ne"] h2,
+html[lang="ne"] h3,
+html[lang="ne"] h4,
+html[lang="hi"] h1,
+html[lang="hi"] h2,
+html[lang="hi"] h3,
+html[lang="hi"] h4 {
+  line-height: 1.5;
+  overflow: visible;
+}
+
+html[lang="ne"] p,
+html[lang="ne"] span,
+html[lang="hi"] p,
+html[lang="hi"] span {
+  line-height: 1.55;
+}
+
+/* Ensure headings with tight tailwind line-heights don't clip Devanagari */
+html[lang="ne"] .leading-tight,
+html[lang="hi"] .leading-tight {
+  line-height: 1.4;
+  padding-top: 0.15em;
+  padding-bottom: 0.15em;
+}
+
+/* Logo container */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+@media (max-width: 640px) {
+  .logo-container {
+    gap: 0.7rem;
+  }
+  
+  .logo-container img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-container img {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+
+/* ============================================
+   HEADER ICONS - INCREASED FOR MOBILE
+   ============================================ */
+
+.header-icon {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 640px) {
+  .header-icon {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+.header-icon-btn {
+  padding: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  .header-icon-btn {
+    padding: 0.5rem !important;
+  }
+  
+  .header-icon-btn svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+
+/* Mobile menu items */
+.mobile-menu-item {
+  font-size: 1.1rem;
+  padding: 0.75rem 0;
+}
+
+@media (max-width: 640px) {
+  .mobile-menu-item {
+    font-size: 1.15rem;
+    padding: 0.85rem 0;
+  }
+}
+
+/* ============================================
+   HIDE SCROLLBAR - ENTIRE WEBSITE
+   ============================================ */
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow-y: scroll;
+}
+
+/* Hide scrollbar for body */
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for all elements */
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Keep scrolling functionality but hide scrollbar */
+.scroll-container {
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+/* ============================================
+   MODAL ANIMATIONS - BOTTOM SHEET FOR MOBILE
+   ============================================ */
+
+/* Desktop modal animation */
+@keyframes modalFadeIn {
+  from {
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile bottom sheet animation */
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Modal backdrop */
+.rt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: modalBackdropIn 0.3s ease forwards;
+}
+
+/* Modal container */
+.rt-modal {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  padding: 1.5rem;
+}
+
+/* Desktop modal */
+.rt-modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 2rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.3s ease forwards;
+}
+
+/* Mobile modal - bottom sheet */
+@media (max-width: 640px) {
+  .rt-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+  
+  .rt-modal-content {
+    border-radius: 24px 24px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    min-height: 40vh;
+    padding: 1.5rem 1.25rem 2rem;
+    animation: modalSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Drag handle / indicator at top of bottom sheet */
+  .rt-modal-content::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 4px;
+    opacity: 0.6;
+  }
+  
+  /* Close button for mobile */
+  .rt-modal-close {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 0.75rem;
+    background: white;
+    margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+    padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+    border-radius: 24px 24px 0 0;
+  }
+  
+  .rt-modal-close button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+  }
+  
+  .rt-modal-close button:hover {
+    background: #e5e7eb;
+  }
+  
+  .rt-modal-close button:active {
+    transform: scale(0.9);
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 380px) {
+  .rt-modal-content {
+    padding: 1rem 0.75rem 1.5rem;
+    max-height: 95vh;
+  }
+  
+  .rt-modal-close {
+    padding: 0.25rem 0.25rem 0.5rem 0.25rem;
+  }
+  
+  .rt-modal-close button {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}
+
+/* Modal content padding for all screens */
+.rt-modal-body {
+  padding: 0.5rem 0;
+}
+
+@media (max-width: 640px) {
+  .rt-modal-body {
+    padding: 0.25rem 0 1rem;
+  }
+}
+
+/* Modal title - responsive */
+.rt-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .rt-modal-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Modal subtitle */
+.rt-modal-subtitle {
+  font-size: 0.95rem;
+  color: #6B6B72;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .rt-modal-subtitle {
+    font-size: 0.9rem;
+  }
+}
+
+/* Modal actions - responsive */
+.rt-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+@media (max-width: 640px) {
+  .rt-modal-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+  }
+  
+  .rt-modal-actions button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem !important;
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================
+   TOAST ANIMATIONS
+   ============================================ */
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.rt-toast-animate {
+  animation: toastIn 0.3s ease forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+/* Toast container - responsive */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: auto;
+  max-width: 90vw;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    bottom: 16px;
+    max-width: 95vw;
+    width: 100%;
+  }
+}
+
+.toast-item {
+  pointer-events: auto;
+  padding: 10px 16px;
+  border-radius: 999px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 90vw;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .toast-item {
+    padding: 12px 18px;
+    font-size: 14px;
+    max-width: 95vw;
+    white-space: normal;
+    word-break: break-word;
+    border-radius: 12px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.toast-item:hover {
+  transform: scale(1.02);
+}
+
+.toast-item-success {
+  background: #16A34A;
+}
+
+.toast-item-error {
+  background: #EF4444;
+}
+
+.toast-item-warning {
+  background: #F59E0B;
+}
+
+.toast-item-info {
+  background: #1C1717;
+}
+
+.toast-close {
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rt-spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   ADDITIONAL ANIMATIONS
+   ============================================ */
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+.animate-border-flow {
+  background-size: 200% 200%;
+  animation: border-flow 3s ease-in-out infinite;
+}
+
+.animate-ping-slow {
+  animation: ping-slow 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-500 {
+  animation-delay: 500ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Hide scrollbar utility */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Keep scroll but hide bar */
+.scroll-hidden {
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+/* Horizontal scroll hidden */
+.scroll-x-hidden {
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-x-hidden::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
+/* ============================================
+   RESPONSIVE UTILITY CLASSES - INCREASED SIZES
+   ============================================ */
+
+/* Mobile-first responsive images */
+.responsive-img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+/* Responsive grid gaps */
+.responsive-grid {
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-grid {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    gap: 2rem;
+  }
+}
+
+/* Mobile padding adjustments */
+.responsive-padding {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-padding {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-padding {
+    padding: 2rem;
+  }
+}
+
+/* Responsive text sizes - INCREASED FOR MOBILE */
+.responsive-text-sm {
+  font-size: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-sm {
+    font-size: 0.875rem;
+  }
+}
+
+.responsive-text-base {
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-base {
+    font-size: 1rem;
+  }
+}
+
+.responsive-text-lg {
+  font-size: 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-lg {
+    font-size: 1.125rem;
+  }
+}
+
+.responsive-text-xl {
+  font-size: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-xl {
+    font-size: 1.25rem;
+  }
+}
+
+.responsive-text-2xl {
+  font-size: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-2xl {
+    font-size: 1.5rem;
+  }
+}
+
+.responsive-text-3xl {
+  font-size: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-text-3xl {
+    font-size: 1.875rem;
+  }
+}
+
+/* Mobile-friendly containers */
+.container-mobile {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-mobile {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    max-width: 1024px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-mobile {
+    max-width: 1280px;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+.prevent-overflow {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Mobile touch targets (minimum 44px) - INCREASED */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+@media (max-width: 640px) {
+  .touch-target {
+    min-width: 52px;
+    min-height: 52px;
+  }
+}
+
+/* Responsive hiding */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hide-mobile {
+    display: block;
+  }
+}
+
+.hide-desktop {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .hide-desktop {
+    display: none;
+  }
+}
+
+/* ============================================
+   FLOATING SOCIAL ICONS - RESPONSIVE FIX
+   ============================================ */
+
+/* Social floating - desktop */
+.social-floating {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Social floating - mobile - INCREASED SIZE */
+@media (max-width: 640px) {
+  .social-floating {
+    top: auto;
+    bottom: 100px;
+    right: 12px;
+    transform: none;
+    gap: 12px;
+  }
+  
+  .social-floating .social-icon {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+  }
+  
+  .social-floating .social-icon svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+/* ============================================
+   FOUNDER SECTION - RESPONSIVE
+   ============================================ */
+
+.founder-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .founder-card {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .founder-card {
+    gap: 1rem;
+  }
+  
+  .founder-card .founder-image {
+    aspect-ratio: 4/3;
+  }
+  
+  .founder-card .founder-name {
+    font-size: 1.75rem !important;
+  }
+  
+  .founder-card .founder-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .founder-card .founder-bio {
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+  }
+}
+
+/* ============================================
+   TIMELINE - RESPONSIVE
+   ============================================ */
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .timeline-item {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .timeline-item.reverse {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  
+  .timeline-item.reverse .timeline-image {
+    order: 1;
+  }
+  
+  .timeline-item.reverse .timeline-content {
+    order: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .timeline-item {
+    gap: 1rem;
+  }
+  
+  .timeline-item .timeline-image {
+    height: 220px;
+  }
+  
+  .timeline-item .timeline-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .timeline-item .timeline-desc {
+    font-size: 1rem !important;
+    line-height: 1.7 !important;
+  }
+  
+  .timeline-item .timeline-number {
+    font-size: 2.5rem !important;
+  }
+}
+
+/* ============================================
+   HISTORICAL TABLE - RESPONSIVE
+   ============================================ */
+
+.historical-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+@media (max-width: 640px) {
+  .historical-table-wrapper {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .historical-table-wrapper table {
+    font-size: 0.85rem;
+  }
+  
+  .historical-table-wrapper table th,
+  .historical-table-wrapper table td {
+    padding: 0.6rem 0.75rem;
+    min-width: 130px;
+  }
+  
+  .historical-table-wrapper table th:first-child,
+  .historical-table-wrapper table td:first-child {
+    min-width: 70px;
+  }
+  
+  .historical-table-wrapper table th {
+    font-size: 0.8rem !important;
+  }
+  
+  .historical-table-wrapper table td {
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+  }
+}
+
+/* ============================================
+   HERO SECTION - RESPONSIVE
+   ============================================ */
+
+.hero-section {
+  min-height: 100svh;
+  height: 100svh;
+}
+
+@media (max-width: 640px) {
+  .hero-section {
+    min-height: 80vh;
+    height: 80vh;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.8rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .hero-section p {
+    font-size: 1.05rem !important;
+    max-width: 90% !important;
+    line-height: 1.6 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    min-height: 75vh;
+    height: 75vh;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.2rem !important;
+  }
+  
+  .hero-section p {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* ============================================
+   TEMPLE HEADING - hero title on the home page
+   video hero and the About hero banner.
+
+   Fraunces/Inter carry the Latin/Chinese text, Mukta carries the
+   Devanagari (Nepali/Hindi) and Tamil text, so one rule covers
+   every language instead of a per-language override. clamp() keeps
+   the title proportional: it grows with the viewport but stays
+   readable on a 320px phone and never overflows a wide desktop.
+
+   Deliberately not `!important`: the legacy `.hero-section h1`
+   rules above pin a fixed size on small screens, which would
+   otherwise defeat the clamp.
+   ============================================ */
+
+.temple-heading {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(3rem, 6vw, 6rem);
+  line-height: 1.1;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 0px 10px 20px rgba(0, 0, 0, 0.6),
+               0px 4px 6px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.02em;
+  /* Devanagari/Tamil matras sit outside the Latin cap/box metrics, so
+     give them a little breathing room or the top of the glyphs clips. */
+  overflow: visible;
+  padding: 0.06em 0;
+}
+
+html[lang='ne'] .temple-heading,
+html[lang='hi'] .temple-heading,
+html[lang='ta'] .temple-heading {
+  line-height: 1.22;
+  letter-spacing: 0;
+}
+
+/* ============================================
+   HERO TAGLINE
+
+   "Where devotion meets the sacred banks of Bagmati". It was
+   `text-white/70` at text-base/text-lg with no weight, so it read as an
+   afterthought next to the temple name. Bumped a step, made semibold, and
+   given full contrast.
+
+   It sits directly under the temple name inside the hero banner, so the
+   banner reads as name + tagline rather than a lone title.
+
+   The location pill that used to sit under this ("Battisputali, Kathmandu")
+   was removed from the hero entirely; the address is still shown in the
+   About section, on the Contact page and in the footer.
+   ============================================ */
+
+.hero-tagline {
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-inline: auto;
+  padding: 0 0.25rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+  overflow: visible;
+}
+
+@media (min-width: 640px) {
+  .hero-tagline {
+    font-size: 1.2rem;
+  }
+}
+
+/* Devanagari and Tamil need a taller box or the matras clip at these sizes. */
+html[lang='ne'] .hero-tagline,
+html[lang='hi'] .hero-tagline,
+html[lang='ta'] .hero-tagline {
+  line-height: 1.75;
+}
+
+/* ============================================
+   SCROLL PERFORMANCE
+
+   The page felt sticky while scrolling. Three contributors, all addressed
+   here:
+
+   1. `scroll-behavior: smooth` makes programmatic scrolls animate, and gives
+      anchor jumps a smooth ride instead of an instant teleport.
+   2. `overflow-anchor: none` stops the browser from re-flowing content under
+      the viewport as lazy images load. Those reflows fight the scroll and are a
+      common source of visible jitter.
+   3. `text-size-adjust` prevents iOS from inflating text mid-scroll, which
+      triggers a full re-layout.
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/*
+ * Respect the OS "reduce motion" setting: transitions, hover lifts and the
+ * ornamental loops are toned down or switched off.
+ *
+ * The gallery marquee is the exception. The blanket rule below can never be
+ * beaten by an inline `animation`, so with "reduce motion" on (Android's
+ * "Remove animations" ships enabled) the strip used to play a single 0.01ms
+ * frame and sit frozen. A class selector outranks `*`, so re-asserting the
+ * track's own duration and iteration count keeps it looping.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .marquee-row {
+    animation-duration: var(--marquee-duration, 30s) !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Sections far below the fold are skipped during layout and paint until they
+ * approach the viewport. Without this, the browser lays out and paints every
+ * section on every scroll frame even though only one is visible.
+ *
+ * `contain-intrinsic-size` supplies a placeholder height so the scrollbar
+ * length stays stable while the real content is unskipped.
+ */
+.rt-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
+
+/* ============================================
+   HERO SHLOKA
+
+   Replaces the temple name and tagline that used to sit over the home hero
+   video. Sized and weighted to be plainly readable over moving footage rather
+   than sitting back as an inscription: the verse is the focus, the two labels
+   above it are smaller and gold so they read as headings.
+
+   No scrim or panel sits behind it — legibility comes from the text-shadow
+   alone, so the video is left unobstructed. If a particular video frame is
+   too bright, the fix belongs in that video, not in an overlay.
+
+   Mukta carries the Devanagari (it is already loaded for the headings); the
+   rest of the stack is a fallback in case the webfont is still in flight.
+
+   Line heights are generous on purpose. Bold Devanagari sits taller than
+   regular, and the matras above and below the baseline clip at tighter
+   values.
+   ============================================ */
+
+.hero-shloka {
+  position: relative;
+  max-width: 42rem;
+  margin-inline: auto;
+  text-align: center;
+  font-family: 'Mukta', system-ui, sans-serif;
+  color: #fff;
+  padding: 1.75rem 1.25rem;
+  overflow: visible;
+}
+
+.hero-shloka__label {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 2;
+  letter-spacing: 0.14em;
+  color: #f2e2b4;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 2px 12px rgba(0, 0, 0, 0.85);
+  overflow: visible;
+}
+
+/* Short gradient rule that separates the labels from the verse. */
+.hero-shloka__rule {
+  width: 7rem;
+  height: 2px;
+  margin: 1rem auto 1.1rem;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(246, 197, 195, 0.9),
+    transparent
+  );
+}
+
+.hero-shloka__verse {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.hero-shloka__line {
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.95;
+  letter-spacing: 0.005em;
+  color: #ffffff;
+  /* A tight dark ring right under the glyphs keeps the white lettering crisp over
+     a bright photograph, then a wider soft shadow for the halo. */
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 2px 16px rgba(0, 0, 0, 0.85),
+    0 0 22px rgba(0, 0, 0, 0.6);
+  overflow: visible;
+}
+
+@media (min-width: 640px) {
+  .hero-shloka__label {
+    font-size: 1.1rem;
+  }
+
+  .hero-shloka__line {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-shloka {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .hero-shloka__label {
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+  }
+
+  .hero-shloka__line {
+    font-size: 1.15rem;
+    line-height: 2;
+  }
+}
+
+/* ============================================
+   OM LOADER
+
+   Only the ring rotates; the ॐ inside is static so it stays readable.
+   Declared here rather than with Tailwind's animate-spin so the easing can be
+   set and so the animation is transform-only - the compositor runs it without
+   touching layout or paint, which matters because the loader is often on
+   screen while the page is scrolling.
+   ============================================ */
+
+@keyframes rt-om-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rt-om-spin {
+  animation: rt-om-spin 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform;
+}
+
+/* The mark must not be the only thing moving for someone who asked it not to be. */
+@media (prefers-reduced-motion: reduce) {
+  .rt-om-spin {
+    animation: none;
+  }
+}
+
+/* ============================================
+   SKELETON LOADING
+
+   Used while settings/data are in flight. The shimmer is a background-position
+   animation on a single element (compositor-friendly, no layout or paint
+   thrash) rather than an element that changes width every frame.
+   ============================================ */
+
+.rt-skeleton {
+  background: linear-gradient(180deg, #f4f4f6 0%, #ececef 100%);
+}
+
+.rt-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f4f4f6 0%, #ececef 100%);
+}
+
+/* Moving highlight, drawn on the compositor only. */
+.rt-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: rt-shimmer-sweep 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes rt-shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rt-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   GALLERY - RESPONSIVE
+   ============================================ */
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+/* ============================================
+   BOOKING CARDS - RESPONSIVE
+   ============================================ */
+
+.booking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .booking-card {
+    padding: 1.25rem !important;
+  }
+  
+  .booking-card h3 {
+    font-size: 1.2rem !important;
+  }
+  
+  .booking-card p {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* ============================================
+   HEADER - RESPONSIVE ENHANCEMENTS
+   ============================================ */
+
+@media (max-width: 640px) {
+  .header-container {
+    padding: 0 0.75rem !important;
+  }
+  
+  .header-logo img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  
+  .header-logo-text {
+    font-size: 1.5rem !important;
+  }
+  
+  .header-actions {
+    gap: 0.75rem !important;
+  }
+  
+  .header-actions button {
+    padding: 0.5rem !important;
+  }
+  
+  .header-actions button svg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
+
+/* ============================================
+   FOOTER - RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .footer-container {
+    padding: 1.5rem 1rem !important;
+  }
+  
+  .footer-text {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+  }
+  
+  .footer-links {
+    gap: 0.75rem !important;
+  }
+  
+  .footer-links a {
+    font-size: 0.95rem !important;
+    padding: 0.4rem 0 !important;
+  }
+  
+  .footer-social-icons {
+    gap: 0.75rem !important;
+  }
+  
+  .footer-social-icons a {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  
+  .footer-social-icons a svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+/* ============================================
+   SECTION TITLES - RESPONSIVE
+   ============================================ */
+
+.section-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 1.8rem !important;
+  }
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 640px) {
+  .section-subtitle {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+}
+
+/* ============================================
+   CARDS - RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem !important;
+  }
+  
+  .card-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .card-text {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================
+   FULLSCREEN - Hide taskbar and tabs
+   ============================================ */
+
+/* Fullscreen fallback for browsers without fullscreen API support */
+.fullscreen-fallback,
+.fullscreen-fallback body {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.fullscreen-fallback {
+  z-index: 9999 !important;
+  background: black !important;
+}
+
+.fullscreen-fallback body {
+  z-index: 9998 !important;
+}
+
+/* Hide scrollbars in fullscreen */
+:fullscreen,
+:-webkit-full-screen,
+:-moz-full-screen,
+:ms-fullscreen {
+  overflow: hidden !important;
+}
+
+:fullscreen body,
+:-webkit-full-screen body,
+:-moz-full-screen body,
+:ms-fullscreen body {
+  overflow: hidden !important;
+}
+
+/* Hide browser UI elements in fullscreen mode */
+:fullscreen .hide-in-fullscreen,
+:-webkit-full-screen .hide-in-fullscreen,
+:-moz-full-screen .hide-in-fullscreen,
+:ms-fullscreen .hide-in-fullscreen {
+  display: none !important;
+}
+
+/* Fullscreen video container styling */
+.fullscreen-video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: black;
+}
+
+.fullscreen-video-container video,
+.fullscreen-video-container iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ============================================
+   SNAKE BORDER - ANIMATED GRADIENT BORDER
+   ============================================ */
+.snake-border {
+  position: relative;
+  border-radius: 16px;
+  padding: 3px;
+  background: #ffffff;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.snake-border::before {
+  content: '';
+  position: absolute;
+  inset: -150%;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 300deg,
+    #A80808 325deg,
+    #E2DBD8 345deg,
+    #A80808 360deg
+  );
+  animation: snake-spin 3s linear infinite;
+}
+
+.snake-border > * {
+  position: relative;
+  z-index: 1;
+  border-radius: 13px;
+  background: #ffffff;
+}
+
+@keyframes snake-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   MODERN SNAKE CARD - hover shows animated
+   conic snake border + background shift
+   ============================================ */
+.snake-card {
+  position: relative;
+  border-radius: 26px;
+  padding: 6px;
+  background: #efeae4;
+  isolation: isolate;
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.5s ease;
+  will-change: transform;
+}
+
+.snake-card::before {
+  content: '';
+  position: absolute;
+  inset: -160%;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 268deg,
+    #A80808 302deg,
+    #E2DBD8 330deg,
+    #820606 350deg,
+    #A80808 360deg
+  );
+  animation: snake-spin 3.2s linear infinite;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+
+.snake-card:hover::before {
+  opacity: 1;
+}
+
+.snake-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 21px;
+  background: #efeae4;
+  transition: background 0.5s ease;
+}
+
+.snake-card:hover::after {
+  background: #f3ede6;
+}
+
+.snake-card > .snake-inner {
+  position: relative;
+  z-index: 2;
+  border-radius: 21px;
+  background: #ffffff;
+  transition: background 0.6s ease, box-shadow 0.6s ease;
+}
+
+.snake-card:hover > .snake-inner {
+  background: linear-gradient(140deg, #fff6f1 0%, #fffbed 48%, #fdeee9 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.snake-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 30px 60px -18px rgba(28, 23, 23, 0.3);
+}
+
+/* ============================================
+   MODERN CONTACT PAGE - decorative blobs
+   ============================================ */
+.contact-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(24px, -18px) scale(1.05); }
+  66% { transform: translate(-16px, 14px) scale(0.97); }
+}
+
+.animate-float-slow {
+  animation: float-slow 9s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: float-slow 13s ease-in-out infinite reverse;
+}
+
+/* ============================================
+   MODERN CHATBOT - glass + snake frame + glows
+   ============================================ */
+.chatbot-frame {
+  position: relative;
+  border-radius: 24px;
+  padding: 3px;
+  background: #ffffff;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.chatbot-frame::before {
+  content: '';
+  position: absolute;
+  inset: -160%;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 300deg,
+    #E2DBD8 320deg,
+    #820606 340deg,
+    #A80808 358deg,
+    #A80808 360deg
+  );
+  animation: snake-spin 5s linear infinite;
+  pointer-events: none;
+}
+
+.chatbot-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 21px;
+  background: #ffffff;
+}
+
+.chatbot-frame > .chatbot-panel {
+  position: relative;
+  z-index: 2;
+}
+
+.chatbot-glow {
+  box-shadow: 0 0 0 1px rgba(127, 16, 13, 0.06),
+    0 24px 64px -18px rgba(168, 8, 8, 0.45),
+    0 0 0 rgba(246, 197, 195, 0.35);
+}
+
+.chatbot-glow:hover {
+  box-shadow: 0 0 0 1px rgba(127, 16, 13, 0.06),
+    0 28px 72px -18px rgba(168, 8, 8, 0.5),
+    0 0 44px rgba(246, 197, 195, 0.35);
+}
+
+.chatbot-typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #A80808;
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes typing-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-4px); }
+}
+
+.chatbot-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  border: 2px solid rgba(246, 197, 195, 0.55);
+  animation: pulse-ring 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.75); opacity: 1; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes chat-bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-chat-bubble {
+  animation: chat-bubble-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Facebook reel cards ("रिल र छोटा भिडियोहरू"): the card handles the
+   click, never the embedded player, so a custom cover can be used instead */
+.your-video-container iframe {
+  pointer-events: none; /* Disables clicking the iframe directly if you want a custom cover */
+}
+/* UI audit: justified text opens wide word gaps on narrow screens */
+@media (max-width: 640px) {
+  .text-justify { text-align: left; }
+}
+
+/* UI audit: 44px minimum touch targets for public header/footer/card controls on touch-size screens */
+@media (max-width: 1023px) {
+  header button:not(:empty),
+  footer a,
+  footer button:not(:empty),
+  main a.inline-flex,
+  main button.rounded-full:not(:empty) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  footer a.inline-flex { align-items: center; }
+}
+
+/* 100vh on mobile browsers includes the area behind the URL/toolbar, so the
+   last rows of full-height panels (admin, sidebar) were hidden. Prefer the
+   dynamic viewport height where supported; 100vh stays as the fallback. */
+@supports (height: 100dvh) {
+  .h-screen { height: 100dvh; }
+  .min-h-screen { min-height: 100dvh; }
+}
+
+/* ============================================
+   ACCESSIBILITY BASELINE (UI audit)
+   ============================================ */
+
+/* Visible keyboard focus. Many controls use `focus:outline-none`; those that
+   provide no replacement ring/border would otherwise show nothing, so give
+   them the logo-red outline on keyboard focus only (:focus-visible). */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="switch"]:focus-visible,
+[role="tab"]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #A80808 !important;
+  outline-offset: 2px !important;
+}
+input:focus-visible:not([class*="focus:ring"]):not([class*="focus:border"]),
+select:focus-visible:not([class*="focus:ring"]):not([class*="focus:border"]),
+textarea:focus-visible:not([class*="focus:ring"]):not([class*="focus:border"]) {
+  outline: 2px solid #A80808 !important;
+  outline-offset: 1px !important;
+}
+
+/* Respect the OS "reduce motion" setting site-wide: entrance animations,
+   parallax, marquees and smooth scrolling are reduced to near-instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   HEADING WEIGHT
+   ============================================ */
+
+/* Standard heading weight: Fraunces at 600 instead of the heavy 700/800
+   (utility classes like font-bold on serif headings would otherwise win). */
+.font-serif.font-bold,
+.font-serif.font-extrabold,
+.font-serif.font-black {
+  font-weight: 600;
+}
+
+/* ============================================
+   TYPE SCALE (public pages)
+   Titles   h1 32 -> 44px   page title
+            h2 26 -> 32px   section title
+            h3 22px         card / sub-section title
+   Body     16px reading text, 14px secondary, 12px captions (nothing smaller)
+   Headings keep Fraunces 600; body is Inter (Mukta for Devanagari).
+   The rules sit on #main-content (the public layout only, so the admin panel
+   keeps its own compact scale) and replace the mixed per-page text-* sizes.
+   Display text (hero, big amounts: text-5xl and up, or an explicit text-[..])
+   and deliberately small headings (text-xs/sm/base) are left alone.
+   ============================================ */
+:root {
+  --fs-h1: clamp(2rem, 1.35rem + 2.6vw, 2.75rem);
+  --fs-h2: clamp(1.625rem, 1.25rem + 1.5vw, 2rem);
+  --fs-h3: 1.375rem;
+}
+
+#main-content h1:not([class*="text-5xl"], [class*="text-6xl"], [class*="text-7xl"], [class*="text-["], [class*="text-xs"], [class*="text-sm"], [class*="text-base"]) {
+  font-size: var(--fs-h1);
+  line-height: 1.2;
+}
+
+#main-content h2:is([class*="text-3xl"], [class*="text-4xl"]):not([class*="text-5xl"], [class*="text-6xl"], [class*="text-7xl"], [class*="text-["]) {
+  font-size: var(--fs-h2);
+  line-height: 1.25;
+}
+
+#main-content h2:is([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"]):not([class*="text-3xl"], [class*="text-4xl"], [class*="text-5xl"], [class*="text-["]),
+#main-content h3:is([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"], [class*="text-[1.75rem]"]):not([class*="text-3xl"], [class*="text-4xl"], [class*="text-5xl"]) {
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+}
+
+html[lang="ne"] #main-content :is(h1, h2, h3),
+html[lang="hi"] #main-content :is(h1, h2, h3) {
+  line-height: 1.45;
+}
+
+/* Nepali / Hindi (Devanagari in Mukta) have a smaller x-height than Latin in Inter,
+   so at the same px size they read a full step smaller. Every rem-based size is
+   lifted 12.5% for these two languages (body 16 -> 18, secondary 14 -> 15.75,
+   caption 12 -> 13.5) and body weight goes to 500 so thin strokes stay visible. */
+html[lang="ne"],
+html[lang="hi"] {
+  font-size: calc(18px * var(--text-scale, 1));
+}
+
+html[lang="ne"] body,
+html[lang="hi"] body {
+  font-weight: 500;
+}
+
+/* Readability: justified paragraphs open uneven gaps (worse in Devanagari), so
+   keep them left-aligned in every language. Sizes are the same in all languages. */
+.text-justify {
+  text-align: left;
+}
+
+/* The home page About description is the one place that IS justified: the text
+   has to sit in a straight block against the photo column, so both edges are
+   set flush. `.about-text` is opted in rather than relaxing the rule above for
+   the whole site. `inter-word` keeps the spacing added between words (a
+   Devanagari line has few break opportunities) and the last line is left ragged
+   instead of being stretched across the column. */
+.about-text {
+  text-align: justify;
+  text-align-last: left;
+  text-justify: inter-word;
+}
+/* Justifying a narrow column leaves rivers of white between the words, so the
+   block is left-aligned again on phones, where there is nothing to line up. */
+@media (max-width: 640px) {
+  .about-text {
+    text-align: left;
+  }
+}
+
+/* The About introduction is the exception: its heading is centred, so centring
+   the paragraph too keeps the two from reading as unrelated blocks. Only the
+   final line needs resetting, because `.about-text` pins it left for the ragged
+   edge the justified columns rely on. Two classes, so this outranks the single
+   `.about-text` rule above without depending on which comes later. */
+@media (max-width: 640px) {
+  .about-text.is-centered-mobile {
+    text-align: center;
+    text-align-last: center;
+  }
+}
+
+/* The home page About description is the other exception, and for the opposite
+   reason: it is always justified, because it has to read as a straight block of
+   text rather than a ragged one. That holds on a phone too, so this restores the
+   justification the rule above drops. `text-align-last` is left alone — it is
+   already `left`, which is what keeps the closing line from being stretched. */
+@media (max-width: 640px) {
+  .about-text.is-justified-mobile {
+    text-align: justify;
+  }
+}
+
+/* Scrolling announcement line above the navbar (Admin → Header). The track holds
+   the message twice and is moved by exactly half its own width, so the second
+   copy arrives where the first one left off: the loop has no gap and no jump.
+   The duration is set from the admin's speed (--marquee-duration) and the whole
+   thing is transform-only, so it runs on the compositor. */
+.rt-marquee-line {
+  display: flex;
+  width: max-content;
+  animation: rt-marquee-scroll var(--marquee-duration, 40s) linear infinite;
+}
+.rt-marquee-text {
+  display: inline-block;
+  padding-inline-end: 3rem;
+  white-space: nowrap;
+}
+@keyframes rt-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* A moving line is exactly what this setting is asking to avoid, so the
+   animation is dropped and the words are shown once, still and centred. */
+@media (prefers-reduced-motion: reduce) {
+  .rt-marquee-line {
+    animation: none;
+    width: auto;
+    justify-content: center;
+  }
+  .rt-marquee-text {
+    white-space: normal;
+    padding-inline-end: 0;
+  }
+  /* only the first copy is shown; the duplicate exists for the loop alone */
+  .rt-marquee-text + .rt-marquee-text {
+    display: none;
+  }
+}
+
+/* Flags (home banner): the cloth sways at the pole and the flag drifts up and down. */
+.flag-cloth { transform-box: fill-box; transform-origin: left center; animation: flag-wave 2.8s ease-in-out infinite; }
+.flag-cloth-right { transform-origin: right center; animation-delay: -1.4s; }
+.flag-float { animation: flag-float 5s ease-in-out infinite; }
+@keyframes flag-wave { 0%, 100% { transform: skewY(0deg) scaleX(1); } 50% { transform: skewY(-5deg) scaleX(0.94); } }
+@keyframes flag-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .flag-cloth, .flag-float { animation: none; } }
+
+/* Devanagari (Nepali, Hindi) and Tamil letters join into conjuncts and matras;
+   any letter-spacing (the tracking-* utilities, hero text, labels) pulls them
+   apart, so it is switched off for these languages everywhere. */
+html[lang="ne"] *, html[lang="ne"] *::before, html[lang="ne"] *::after,
+html[lang="hi"] *, html[lang="hi"] *::before, html[lang="hi"] *::after,
+html[lang="ta"] *, html[lang="ta"] *::before, html[lang="ta"] *::after {
+  letter-spacing: normal !important;
+}
+
+/* The header never scales: the page text follows the reader's text-size choice and
+   the 18px Nepali/Hindi base, but the header row (logo, name, menus, buttons)
+   always renders at its normal size so the temple name stays on one line. */
+.rt-site-header {
+  zoom: calc(1 / var(--text-scale, 1));
+}
+
+html[lang="ne"] .rt-site-header,
+html[lang="hi"] .rt-site-header {
+  zoom: calc(0.8889 / var(--text-scale, 1));
+}
+
+/* Footer columns: as many as fit at 12.5rem each. rem-based, so when the reader
+   enlarges the text the columns reflow (4 -> 3 -> 2 -> 1) instead of cramping. */
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+  gap: 2.5rem 2rem;
+  margin-inline: auto;
+}
+
+/* Footer links: never underlined. On hover the text takes the theme colour (set
+   with Tailwind on the link) and goes bold. The hidden bold copy of the text
+   reserves the wider width, so nothing around it shifts. */
+.foot-link { text-decoration: none; }
+.foot-text { display: inline-flex; flex-direction: column; }
+.foot-text::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+  pointer-events: none;
+  user-select: none;
+}
+.foot-link:hover .foot-text,
+.foot-link:focus-visible .foot-text { font-weight: 700; }
+
+/* NEPALI & HINDI: one Devanagari family, Mukta, for everything (the same face
+   ratopati.com uses): body 400-500, headlines and navigation 600-700. Latin
+   words inside Nepali/Hindi pages use Mukta too, so a line never mixes faces. */
+html[lang="ne"] body,
+html[lang="hi"] body,
+html[lang="ne"] .font-serif,
+html[lang="hi"] .font-serif,
+html[lang="ne"] .font-sans,
+html[lang="hi"] .font-sans,
+html[lang="ne"] :is(h1, h2, h3, h4, h5, h6, button, input, select, textarea),
+html[lang="hi"] :is(h1, h2, h3, h4, h5, h6, button, input, select, textarea) {
+  font-family: 'Mukta', system-ui, sans-serif !important;
+}
+
+/* The header never scales, so Devanagari there is sized for reading directly:
+   navigation 17px / weight 600 (ratopati: 18px / 600), the temple name larger. */
+html[lang="ne"] .rt-site-header .nav-link,
+html[lang="hi"] .rt-site-header .nav-link {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+html[lang="ne"] .rt-site-header [data-logo-name="hero"],
+html[lang="hi"] .rt-site-header [data-logo-name="hero"] {
+  font-size: clamp(1.625rem, 2.4vw, 2.125rem);
+}
+html[lang="ne"] .rt-site-header [data-logo-name="compact"],
+html[lang="hi"] .rt-site-header [data-logo-name="compact"] {
+  font-size: 1.1875rem;
+}
+html[lang="ne"] .rt-site-header [data-logo-name="default"],
+html[lang="hi"] .rt-site-header [data-logo-name="default"] {
+  font-size: 1.0625rem;
+}
+
+/* ============================================
+   ADMIN PANEL POLISH (sizes, images, phones)
+   Scoped to .admin-page so public pages are untouched. Only adjusts the
+   existing markup: no new components, no behaviour changes.
+   ============================================ */
+
+/* Images never overflow their card; thumbnails keep their shape. */
+.admin-page .content-scroll img,
+.admin-page .content-scroll video,
+.admin-page .content-scroll iframe {
+  max-width: 100%;
+}
+.admin-page .content-scroll img:not([class*="object-"]) {
+  height: auto;
+  object-fit: cover;
+}
+
+/* Long words, URLs and e-mails wrap instead of pushing cards wider. */
+.admin-page .content-scroll p,
+.admin-page .content-scroll td,
+.admin-page .content-scroll li,
+.admin-page .content-scroll label {
+  overflow-wrap: anywhere;
+}
+
+/* Consistent readable body text inside admin cards. */
+.admin-page .content-scroll { font-size: 0.9375rem; line-height: 1.55; }
+.admin-page .content-scroll label { font-weight: 500; }
+.admin-page .content-scroll th {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.admin-page .content-scroll td { vertical-align: middle; }
+
+/* Cards: one radius and a calmer shadow so panels read as one system. */
+.admin-page .content-scroll .shadow-lg { box-shadow: 0 1px 3px rgba(17, 17, 17, 0.06), 0 6px 16px -6px rgba(17, 17, 17, 0.08); }
+.admin-page .content-scroll .hover\:shadow-xl:hover { box-shadow: 0 2px 6px rgba(17, 17, 17, 0.08), 0 12px 24px -10px rgba(17, 17, 17, 0.12); }
+
+/* Centre wide-screen content instead of stretching it edge to edge. */
+@media (min-width: 1536px) {
+  .admin-page .content-scroll > * { max-width: 1440px; margin-left: auto; margin-right: auto; }
+}
+
+/* Tablets: slightly tighter card padding. */
+@media (max-width: 1023px) {
+  .admin-page .content-scroll .p-8 { padding: 1.5rem; }
+}
+
+/* Phones: recover horizontal room, scale headings, avoid iOS input zoom. */
+@media (max-width: 639px) {
+  .admin-page .content-scroll { padding: 0.75rem; }
+  .admin-page .content-scroll .p-8,
+  .admin-page .content-scroll .p-6 { padding: 1rem; }
+  .admin-page .content-scroll .p-5 { padding: 0.875rem; }
+  .admin-page .content-scroll .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  .admin-page .content-scroll .gap-6 { gap: 1rem; }
+  .admin-page .content-scroll .gap-8 { gap: 1.25rem; }
+  .admin-page .content-scroll .space-y-6 > * + * { margin-top: 1rem; }
+  .admin-page .content-scroll .space-y-8 > * + * { margin-top: 1.25rem; }
+
+  .admin-page .content-scroll .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+  .admin-page .content-scroll .text-2xl { font-size: 1.3125rem; line-height: 1.75rem; }
+  .admin-page .content-scroll .text-xl { font-size: 1.125rem; line-height: 1.625rem; }
+
+  .admin-page .content-scroll input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  .admin-page .content-scroll select,
+  .admin-page .content-scroll textarea { font-size: 16px; }
+
+  /* Fixed-width search boxes and selects shrink to the screen. */
+  .admin-page .content-scroll [class*="w-["] { max-width: 100%; }
+
+  /* Large media previews stay proportionate on small screens. */
+  .admin-page .content-scroll .h-64 { height: 12rem; }
+  .admin-page .content-scroll .h-80 { height: 13rem; }
+  .admin-page .content-scroll .h-96 { height: 14rem; }
+
+  /* Header: room for the title. */
+  .admin-page header.sticky { height: 60px; }
+}
+
+/* Admin on phones/tablets: comfortable tap targets and legible charts.
+   Measured: many buttons were 24-28px tall and chart ticks 8-10px. */
+@media (max-width: 767px) {
+  .admin-page .content-scroll button:not(.absolute),
+  .admin-page .content-scroll [role="button"]:not(.absolute),
+  .admin-page .content-scroll select,
+  .admin-page .content-scroll a.inline-flex {
+    min-height: 36px;
+  }
+  .admin-page .content-scroll button:not(.absolute) { min-width: 36px; max-width: 100%; }
+  /* Long translated labels (Nepali, Hindi, Tamil) wrap inside the button
+     instead of spilling out of it. */
+  /* Title + action-button headers wrap instead of squeezing the button. */
+  .admin-page .content-scroll .flex.items-center.justify-between:not(.flex-col):not(.flex-nowrap) {
+    flex-wrap: wrap;
+    row-gap: 0.625rem;
+  }
+  .admin-page .content-scroll .flex.items-center.justify-between > div:first-child:not(:only-child) {
+    flex: 1 1 11rem;
+    min-width: 0;
+  }
+  .admin-page .content-scroll button:not(.absolute) {
+    white-space: normal;
+    overflow-wrap: break-word;
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .admin-page .content-scroll input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]) { min-height: 38px; }
+  /* Icon-only buttons (edit, delete, move, view) become square 36px. */
+  .admin-page .content-scroll button:not(.absolute):has(> svg:only-child) {
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Overlay buttons on photos stay put but get a bit bigger. */
+  .admin-page .content-scroll button.absolute:has(> svg:only-child) {
+    min-width: 30px;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .admin-page .content-scroll input[type="checkbox"],
+  .admin-page .content-scroll input[type="radio"] {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Donate button: theme red, text only, no icon. */
+.btn-donate {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.625rem;
+  border: 1px solid #820606;
+  border-radius: 9999px;
+  background: var(--vermilion);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(60 40 0 / 0.25);
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.btn-donate:hover {
+  background: #820606;
+  box-shadow: 0 4px 10px -4px rgb(60 40 0 / 0.45);
+}
+.btn-donate:active {
+  transform: translateY(1px);
+}
+
+/* NEPALI & HINDI titles: Noto Serif Devanagari (real 600/700 weights), the Devanagari
+   counterpart of the Latin title face; body, menus and buttons stay in Mukta. */
+html[lang="ne"] :is(h1, h2, h3, h4, .font-serif),
+html[lang="hi"] :is(h1, h2, h3, h4, .font-serif) {
+  font-family: 'Noto Serif Devanagari', 'Mukta', serif !important;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Header icon buttons (language, account): theme-tinted ring, red icon, soft lift on hover. */
+.rt-site-header .icon-btn {
+  min-height: 2.75rem;
+  border: 1.5px solid #E2DBD8;
+  background: #fff;
+  color: var(--vermilion);
+  box-shadow: 0 1px 3px rgb(28 23 23 / 0.12);
+}
+.rt-site-header .icon-btn:hover {
+  background: #F7F5F4;
+  border-color: var(--vermilion);
+  box-shadow: 0 4px 10px -4px rgb(28 23 23 / 0.35);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   PREMIUM BUTTONS
+   A small lift and soft shadow on hover, a gentle press on click. Named button styles get the
+   full treatment; any other solid-red button gets the lift only.
+   ============================================ */
+.btn-primary, .btn-outline, .btn-donate, .rt-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-primary:not(:disabled):hover, .btn-outline:not(:disabled):hover, .btn-donate:not(:disabled):hover, .rt-btn:not(:disabled):hover,
+:where(a, button).bg-vermilion:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -10px rgb(28 23 23 / 0.35);
+}
+.btn-primary:not(:disabled):active, .btn-outline:not(:disabled):active, .btn-donate:not(:disabled):active, .rt-btn:not(:disabled):active,
+:where(a, button).bg-vermilion:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+}
+:where(a, button).bg-vermilion {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, background-color 0.2s ease;
+}
+
+/* Temple name: the logo's red, solid. */
+.temple-name {
+  color: #A80808;
+  padding-block: 0.1em;
+}
+
+/* Diya: the two flame tongues sway out of step and the glow breathes. */
+.diya .diya-flame-outer,
+.diya .diya-flame-inner { transform-box: fill-box; transform-origin: 50% 100%; }
+.diya .diya-halo { transform-box: fill-box; transform-origin: 50% 50%; }
+.diya--lit .diya-flame-outer { animation: diya-sway 2.6s ease-in-out infinite; }
+.diya--lit .diya-flame-inner { animation: diya-sway 2.1s ease-in-out -0.8s infinite; }
+.diya--lit .diya-halo { animation: diya-glow 3.2s ease-in-out infinite; }
+@keyframes diya-sway {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  25% { transform: scale(0.97, 1.06) skewX(-2.5deg); }
+  50% { transform: scale(1.03, 0.96) skewX(1.5deg); }
+  75% { transform: scale(0.98, 1.04) skewX(2.5deg); }
+}
+@keyframes diya-glow { 0%, 100% { opacity: 0.75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .diya--lit .diya-flame-outer, .diya--lit .diya-flame-inner, .diya--lit .diya-halo { animation: none; } }
+
+/* ============================================
+   TITLES (SectionTitle / PageHeader via TitleBlock)
+   One plain heading in ink (white on dark) with an optional small
+   label above it. The size comes from the type scale above, so the text-size
+   control and every language follow it.
+   ============================================ */
+.rt-title { display: flex; flex-direction: column; align-items: center; }
+.rt-title--left { align-items: flex-start; }
+
+.rt-title-eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--vermilion);
+  font-family: Inter, Mukta, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rt-title--dark .rt-title-eyebrow { color: #E2DBD8; }
+
+.rt-title-h { margin: 0; text-align: inherit; font-weight: 600; color: var(--ink); }
+.rt-title--left .rt-title-h { text-align: left; }
+.rt-title--dark .rt-title-h { color: #fff; }
+
+/* Devanagari and Tamil: no uppercase or tracking (it breaks the joins). */
+html[lang="ne"] .rt-title-eyebrow, html[lang="hi"] .rt-title-eyebrow, html[lang="ta"] .rt-title-eyebrow {
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: inherit;
+  font-size: 0.9375rem;
+}
+
+/* ============================================
+   SUB-TITLES
+   ============================================ */
+/* Sub-title: one plain ink heading, with an optional small label in the logo red above. */
+.rt-sub { display: flex; flex-direction: column; align-items: flex-start; }
+.rt-sub--center { align-items: center; text-align: center; }
+.rt-sub-eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--vermilion);
+  font-family: Inter, Mukta, system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rt-sub-h { margin: 0; font-weight: 600; line-height: 1.25; color: var(--ink); }
+.rt-sub--dark .rt-sub-h { color: #fff; }
+html[lang="ne"] .rt-sub-eyebrow, html[lang="hi"] .rt-sub-eyebrow, html[lang="ta"] .rt-sub-eyebrow { text-transform: none; letter-spacing: 0; font-family: inherit; font-size: 0.9375rem; }
+html[lang="ne"] .rt-sub-h, html[lang="hi"] .rt-sub-h, html[lang="ta"] .rt-sub-h { line-height: 1.4; }
+
+/* Headings in the brand red on light pages read as shouting. Keep them ink and let the logo red be an accent. */
+#main-content :is(h1, h2, h3, h4)[class*="text-maroon"],
+#main-content :is(h1, h2, h3, h4)[class*="text-vermilion"],
+#main-content :is(h1, h2, h3, h4)[class*="text-[#A80808]"],
+#main-content :is(h1, h2, h3, h4)[class*="text-[#820606]"] {
+  color: var(--ink);
+}
+
+/* An ampersand inside a serif heading is set in the body face (the serif's is a showy swash). */
+.rt-amp { font-family: Inter, Mukta, system-ui, sans-serif; font-weight: 600; font-size: 0.92em; }
+
+/* Keep the footer out of view while a page-level loader (OmLoader lg/xl) is showing: it would otherwise jump below the content
+   when that arrives. */
+html[data-page-loading] [data-site-footer] { display: none; }

@@ -1,0 +1,26 @@
+# Secrets: never commit or zip these. Keep real values in the hosting dashboard / a password manager.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+uploads/
+
+# E-mail written to disk instead of sent (EMAIL_DEBUG_DIR in .env)
+.eml-out/
+
+# Logs and scratch files (they contain addresses, phone numbers and stack traces)
+*.log
+err*.txt
+tmp*.js
+test-*.js
+
+# Archives made of the project folder (they would carry the .env files inside)
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

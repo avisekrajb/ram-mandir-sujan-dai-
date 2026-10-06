@@ -1,0 +1,51 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    { "nav": "http://localhost:4600/", "after": 2500 },
+    { "login": "super" },
+    { "nav": "http://localhost:4600/admin/users", "after": 6000 },
+    { "log": "'baseline: overflow=[' + document.body.style.overflow + '] dialogs=' + document.querySelectorAll('[role=dialog]').length" },
+
+    { "click": "text=Anita Gurung", "after": 1500 },
+    { "log": "'drawer open: overflow=[' + document.body.style.overflow + '] dialogs=' + document.querySelectorAll('[role=dialog]').length" },
+    { "click": "text=Suspend", "after": 800 },
+    { "log": "'confirm over drawer: dialogs=' + document.querySelectorAll('[role=dialog]').length + ' | confirm has accessible name: ' + (document.querySelectorAll('[role=dialog]')[1] && document.querySelectorAll('[role=dialog]')[1].getAttribute('aria-labelledby') ? document.getElementById(document.querySelectorAll('[role=dialog]')[1].getAttribute('aria-labelledby')).innerText : 'NONE')" },
+    { "shot": "30-confirm-over-drawer.png" },
+    { "key": "Escape", "after": 600 },
+    { "log": "'after 1st Escape (expect 1: drawer stays): dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + ']'" },
+    { "key": "Escape", "after": 600 },
+    { "log": "'after 2nd Escape (expect 0): dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + '] (expect empty)'" },
+
+    { "click": "text=Anita Gurung", "after": 1500 },
+    { "key": "k", "modifiers": 2, "after": 800 },
+    { "log": "'palette over drawer (expect 2): dialogs=' + document.querySelectorAll('[role=dialog]').length" },
+    { "key": "Escape", "after": 600 },
+    { "log": "'Escape closes palette only (expect 1): dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + ']'" },
+    { "key": "Escape", "after": 600 },
+    { "log": "'then drawer (expect 0): dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + ']'" },
+
+    { "click": "text=Anita Gurung", "after": 1500 },
+    { "click": "text=Suspend", "after": 800 },
+    { "log": "'two overlays open: dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + ']'" },
+    { "eval": "document.querySelector('a[href=\"/admin/audit\"]').click()" },
+    { "wait": 1500 },
+    { "log": "'both unmounted at once (expect overflow empty): dialogs=' + document.querySelectorAll('[role=dialog]').length + ' overflow=[' + document.body.style.overflow + ']'" },
+
+    { "nav": "http://localhost:4600/admin/users", "after": 6000 },
+    { "click": "button[aria-label='Actions: Bikash Rai']", "after": 700 },
+    { "log": "'menu opened, focus on: ' + (document.activeElement.getAttribute('role') || document.activeElement.tagName) + ' / ' + document.activeElement.innerText.trim()" },
+    { "key": "ArrowDown", "after": 300 },
+    { "log": "'ArrowDown -> ' + document.activeElement.innerText.trim() + ' | overflow=[' + document.body.style.overflow + '] (menus do not lock the page)'" },
+    { "key": "End", "after": 300 },
+    { "log": "'End -> ' + document.activeElement.innerText.trim()" },
+    { "key": "Escape", "after": 500 },
+    { "log": "'Escape: menu present=' + !!document.querySelector('[role=menu]') + ', focus back on: ' + document.activeElement.getAttribute('aria-label')" },
+
+    { "click": "button[aria-label='Actions: Bikash Rai']", "after": 600 },
+    { "click": "text=Edit", "after": 900 },
+    { "log": "'edit dialog open, dialogs=' + document.querySelectorAll('[role=dialog]').length" },
+    { "key": "Escape", "after": 700 },
+    { "log": "'closed; focus returns to: ' + document.activeElement.getAttribute('aria-label')" }
+  ]
+}

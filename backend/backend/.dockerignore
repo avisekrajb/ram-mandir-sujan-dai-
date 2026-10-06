@@ -1,0 +1,17 @@
+# Keep secrets, dependencies from the host, logs and scratch files OUT of the image layers.
+.env
+.env.*
+!.env.example
+node_modules
+npm-debug.log*
+uploads
+*.log
+err*.txt
+tmp*.js
+test-*.js
+*.zip
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+README.md

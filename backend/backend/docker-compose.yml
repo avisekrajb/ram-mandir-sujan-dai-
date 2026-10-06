@@ -1,0 +1,50 @@
+# Run: docker compose up --build
+# Values are read from your shell or from a local `.env` next to this file (compose substitutes
+# ${VAR} from it) and passed to the container explicitly. The .env file itself is NOT copied into the
+# image and is NOT loaded wholesale into the container (no `env_file`), so a variable that is not
+# listed here is simply not set.
+services:
+  backend:
+    build: .
+    container_name: temple-backend
+    restart: unless-stopped
+    ports:
+      # Published on this machine only; put a reverse proxy (HTTPS) in front for the internet.
+      - "127.0.0.1:5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      MONGODB_URI: ${MONGODB_URI:?set MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE:-30d}
+      FRONTEND_URL: ${FRONTEND_URL:?set FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      ESEWA_MODE: ${ESEWA_MODE:-test}
+      ESEWA_MERCHANT_ID: ${ESEWA_MERCHANT_ID:-}
+      ESEWA_SECRET_KEY: ${ESEWA_SECRET_KEY:-}
+      ESEWA_SUCCESS_URL: ${ESEWA_SUCCESS_URL:-}
+      ESEWA_FAILURE_URL: ${ESEWA_FAILURE_URL:-}
+      KHALTI_MODE: ${KHALTI_MODE:-test}
+      KHALTI_SECRET_KEY: ${KHALTI_SECRET_KEY:-}
+      KHALTI_RETURN_URL: ${KHALTI_RETURN_URL:-}
+      KHALTI_WEBSITE_URL: ${KHALTI_WEBSITE_URL:-}
+      IPS_MODE: ${IPS_MODE:-test}
+      IPS_MERCHANT_ID: ${IPS_MERCHANT_ID:-}
+      IPS_APP_ID: ${IPS_APP_ID:-}
+      IPS_APP_NAME: ${IPS_APP_NAME:-}
+      IPS_PASSWORD: ${IPS_PASSWORD:-}
+      IPS_PRIVATE_KEY: ${IPS_PRIVATE_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      FB_PAGE_URL: ${FB_PAGE_URL:-}
+      FB_PAGE_TOKEN: ${FB_PAGE_TOKEN:-}
+    security_opt:
+      - no-new-privileges:true

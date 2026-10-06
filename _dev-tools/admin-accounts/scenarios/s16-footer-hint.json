@@ -1,0 +1,40 @@
+{
+  "width": 1440,
+  "height": 900,
+  "steps": [
+    {
+      "nav": "http://localhost:4600/",
+      "after": 2500
+    },
+    {
+      "login": "super"
+    },
+    {
+      "nav": "http://localhost:4600/admin/users",
+      "after": 10000
+    },
+    {
+      "eval": "[...document.querySelectorAll('button')].find(b => b.innerText.includes('Add account') && b.offsetParent).click()"
+    },
+    {
+      "wait": 900
+    },
+    {
+      "click": "text=Admin",
+      "after": 600
+    },
+    {
+      "log": "'footer hint: ' + [...document.querySelectorAll('[role=dialog] [role=status]')].map(e => e.innerText).join(' | ') + ' | count=' + document.querySelectorAll('[role=dialog] [role=status]').length"
+    },
+    {
+      "shot": "44-new-admin-footer-hint.png"
+    },
+    {
+      "click": "[role=dialog] [role=checkbox]",
+      "after": 500
+    },
+    {
+      "log": "'after choosing an area: hints=' + document.querySelectorAll('[role=dialog] [role=status]').length + ' create disabled=' + document.querySelector('button[form=account-form]').disabled"
+    }
+  ]
+}
