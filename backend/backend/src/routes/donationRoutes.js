@@ -3,8 +3,19 @@ const router = express.Router();
 const protect = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { requireArea, hasArea } = require('../middleware/permissions');
-const { paymentScreenshotUpload, userUploadLimiter } = require('../middleware/uploadUserImage');
+const { donationPhotoUpload, paymentScreenshotUpload, userUploadLimiter } = require('../middleware/uploadUserImage');
 const Donation = require('../models/Donation');
+const { MAX_DONATION } = require('../models/Donation');
+
+/*
+ * From this amount up, a donor declares where the money came from and takes a
+ * photograph of themselves. Below it neither is asked for. Must stay the same
+ * figure as needsDeclaredIncome / WIDE_AMOUNT_FROM in frontend/src/utils/money.js
+ * — the form hides the fields at this line and the server stops demanding them,
+ * and if the two drift apart a donor is refused for omitting a field they were
+ * never shown.
+ */
+const DECLARED_INCOME_FROM = 1000000;
 const User = require('../models/User');
 const AdminSettings = require('../models/AdminSettings');
 const { MAX_LIST, parsePagination } = require('../utils/listLimits');
@@ -35,6 +46,24 @@ router.post('/screenshot', protect, userUploadLimiter, paymentScreenshotUpload.s
   }
 });
 
+// @desc    Upload the donor's own photograph, captured live in the browser
+// @route   POST /api/donations/photo
+// @access  Private
+// Separate from the payment screenshot: this one is kept with the donation record
+// and is shown to the committee, so it gets its own folder-sized limit rather
+// than riding on the receipt upload.
+router.post('/photo', protect, userUploadLimiter, donationPhotoUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No photo uploaded' });
+    }
+    res.json({ success: true, url: req.file.path });
+  } catch (error) {
+    console.error('Upload donor photo error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @desc    Create donation (sets status to 'pending' by default)
 // @route   POST /api/donations
 // @access  Private
@@ -54,7 +83,64 @@ router.post('/', protect, async (req, res) => {
       message,
       transactionId,
       screenshot,
+      employment,
+      businessIncome,
+      photo,
     } = req.body;
+
+    // Fifty lakh in one donation. The model carries the same ceiling, so a
+    // request that somehow skipped this check still cannot store more.
+    const amountNum = Number(amount);
+    if (!Number.isFinite(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ message: 'Please enter a donation amount.' });
+    }
+    if (amountNum > MAX_DONATION) {
+      // Says the way out, not just "no": the same wording the three payment
+      // gateways use, so the donor is not told one thing and shown another
+      // depending on how they chose to pay.
+      return res.status(400).json({
+        message:
+          'A single donation cannot be more than 50 lakh (50,00,000). Please send it as a second donation, one transaction of up to 50 lakh each.',
+      });
+    }
+
+    /*
+     * What the donor declares, and their own photograph — asked for from ten lakh
+     * up, and required here from ten lakh up. The threshold is the same one the
+     * form uses to decide whether to show them (needsDeclaredIncome in the
+     * frontend, the same figure inline below), so the server never refuses a
+     * donation for omitting a field the donor was never shown, and never accepts
+     * a large one without them. A record the committee cannot check is a record
+     * it will not accept, and at this size that is what the declaration is for.
+     */
+    const needsDeclaredIncome = amountNum >= DECLARED_INCOME_FROM;
+    const job = String(employment || '').trim();
+    const business = String(businessIncome || '').trim();
+    const donorPhoto = String(photo || '').trim();
+    if (needsDeclaredIncome && !job) {
+      return res.status(400).json({ message: 'Please enter your salary or employment.' });
+    }
+    if (needsDeclaredIncome && !business) {
+      return res.status(400).json({ message: 'Please enter your business income.' });
+    }
+    if (needsDeclaredIncome && !donorPhoto) {
+      return res.status(400).json({ message: 'Please take your photograph. It is required with every donation.' });
+    }
+    // The donor photo is opened and displayed in the admin panel, so it has to be
+    // the address our own upload returned — never an arbitrary one a donor typed
+    // into the field.
+    let okDonorPhoto = false;
+    try {
+      const u = new URL(donorPhoto);
+      const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+      okDonorPhoto = u.protocol === 'https:' && u.hostname === 'res.cloudinary.com' && !u.username && !u.password &&
+        (cloud ? u.pathname.startsWith(`/${cloud}/image/`) : /^\/[^/]+\/image\//.test(u.pathname));
+    } catch { /* not a URL */ }
+    // Checked only when one was expected: below the threshold an empty field is
+    // correct, not a problem.
+    if (needsDeclaredIncome && !okDonorPhoto) {
+      return res.status(400).json({ message: 'Please take your photograph using the camera button.' });
+    }
 
     // A manual donation is only useful if the admin has something to verify it
     // against, so a screenshot, a transaction reference, or both are required.
@@ -89,7 +175,13 @@ router.post('/', protect, async (req, res) => {
       name: name || user.name,
       email: email || user.email,
       phone: phone || user.phone || '',
-      amount: amount || 0,
+      amount: amountNum,
+      // Empty below ten lakh because they were never asked for, not because they
+      // were left out; the timestamp likewise only means something with a photo.
+      employment: job,
+      businessIncome: business,
+      photo: donorPhoto || null,
+      photoCapturedAt: donorPhoto ? new Date() : null,
       paymentMethod: paymentMethod || 'bank',
       transactionId: txn,
       screenshot: shot || null,
@@ -228,25 +320,83 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private/Admin
 router.get('/', protect, admin, requireArea('donations'), async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, category } = req.query;
     // Clamp ?limit/?page (an unbounded or non-numeric limit used to go straight into the query).
     const { limit, page, skip } = parsePagination(req.query, { defaultLimit: 100, maxLimit: 500 });
+
+    /*
+     * The buckets the admin panel files donations into. Read on every request
+     * rather than stamped onto each record, so an administrator editing a range
+     * sees every donation re-filed immediately.
+     */
+    const settings = await AdminSettings.getSettings();
+    const buckets = (settings?.donationCategories || [])
+      .filter((c) => c.enabled !== false)
+      .slice()
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const findBucket = (amount) =>
+      buckets.find((c) => amount >= (c.min ?? 0) && (c.max === null || c.max === undefined || amount < c.max)) || null;
 
     let query = {};
     if (status) {
       query.status = String(status);
+    }
+    // A bucket is a range, not a stored value, so the filter is the range.
+    if (category) {
+      const bucket = buckets.find((c) => c.key === String(category));
+      if (!bucket) {
+        return res.status(400).json({ message: 'That donation category no longer exists.' });
+      }
+      query.amount = { $gte: bucket.min ?? 0 };
+      if (bucket.max !== null && bucket.max !== undefined) query.amount.$lt = bucket.max;
     }
 
     const donations = await Donation.find(query)
       .sort({ date: -1 })
       .skip(skip)
       .limit(limit);
-    
+
     const total = await Donation.countDocuments(query);
-    
+
+    // Counts and totals for every bucket, so the tabs can show what is in each
+    // one without the panel asking for them one at a time. Counted on the whole
+    // collection, ignoring the current filter: a tab that emptied itself when
+    // you selected it would be useless.
+    const byCategory = buckets.map((c) => ({
+      key: c.key,
+      label: c.label,
+      min: c.min ?? 0,
+      max: c.max ?? null,
+      order: c.order || 0,
+      range: { $gte: c.min ?? 0, ...(c.max === null || c.max === undefined ? {} : { $lt: c.max }) },
+    }));
+    const summary = await Promise.all(
+      byCategory.map(async (c) => {
+        const [agg] = await Donation.aggregate([
+          { $match: { amount: c.range } },
+          { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$amount' } } },
+        ]);
+        return {
+          key: c.key,
+          label: c.label,
+          min: c.min,
+          max: c.max,
+          order: c.order,
+          count: agg?.count || 0,
+          total: agg?.total || 0,
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: donations,
+      // Each donation carries the bucket it falls in, worked out now.
+      data: donations.map((d) => {
+        const bucket = findBucket(d.amount);
+        const plain = d.toObject ? d.toObject() : d;
+        return { ...plain, categoryKey: bucket ? bucket.key : null };
+      }),
+      categories: summary,
       pagination: {
         total,
         page,

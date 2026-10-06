@@ -11,6 +11,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatDateTime, formatDate as formatLocaleDate } from '../../utils/formatDate';
 import api from '../../services/api';
+import { shortAmount } from '../../utils/money';
 import DonationReceipt from '../common/DonationReceipt';
 import DownloadMenu from './DownloadMenu';
 import BankAccounts from './BankAccounts';
@@ -126,6 +127,14 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
   const [switchBusy, setSwitchBusy] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  /*
+   * Donor buckets. The ranges live in the settings so an administrator can
+   * change them; the server re-files every donation on each request, so the tab
+   * counts here always match what the current ranges say rather than what they
+   * said when a donation arrived.
+   */
+  const [categories, setCategories] = useState([]);
+  const [filterCategory, setFilterCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
 
   // Printing: a single donation, or every row currently visible after filtering
@@ -150,6 +159,25 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
     if (settings?.donatePageTitle) setDonatePageTitle(settings.donatePageTitle);
     if (settings?.donateIntro) setDonateIntro(settings.donateIntro);
   }, [settings]);
+
+  /*
+   * The bucket tabs and their counts. Asked for on their own (limit 1) rather
+   * than taken from the donations already on screen, so the totals cover every
+   * donation rather than only the page being looked at. A failure here leaves
+   * the list working with just the "All" tab rather than breaking the page.
+   */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api.get('/donations?limit=1');
+        if (alive && Array.isArray(res.data?.categories)) setCategories(res.data.categories);
+      } catch {
+        /* the buckets are an extra; the donation list does not depend on them */
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   // Initialize from settings when available
   useEffect(() => {
@@ -504,12 +532,24 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
 
   const realDonors = donations?.filter(d => d.status === 'completed') || [];
 
+  // Written the way a Nepali amount is read: 1 to 100 thousand, then up to a
+  // million, then everything above that. Kept beside the tab so a range and its
+  // label cannot drift apart.
+  const categoryRangeText = (c) => {
+    const from = shortAmount(c.min ?? 0);
+    const to = c.max === null || c.max === undefined ? null : shortAmount(c.max);
+    return to ? `${from} – ${to}` : `${from}+`;
+  };
+
   const filteredDonations = donations?.filter(donation => {
     const matchesSearch = donation.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           donation.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           donation.phone?.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || donation.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    // 'all' means every bucket, including a donation that falls outside all of
+    // them (only possible if an administrator narrows the ranges).
+    const matchesCategory = filterCategory === 'all' || donation.categoryKey === filterCategory;
+    return matchesSearch && matchesStatus && matchesCategory;
   }) || [];
 
   const sortedDonations = [...filteredDonations].sort((a, b) => 
@@ -751,12 +791,52 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
                 <option value="refunded">{t?.refunded || 'Refunded'}</option>
               </select>
               <button
-                onClick={() => { setSearchTerm(''); setFilterStatus('all'); }}
+                onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterCategory('all'); }}
                 className="px-3 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition-colors"
                 title={t?.a1_donResetFilters || 'Reset Filters'}
               >
                 <RefreshCw size={16} className="text-gray-400" />
               </button>
+
+              {categories.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterCategory('all')}
+                    aria-pressed={filterCategory === 'all'}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      filterCategory === 'all'
+                        ? 'bg-[#A80808] text-white border-[#A80808]'
+                        : 'bg-white text-ink-soft border-gray-200 hover:border-[#A80808]'
+                    }`}
+                  >
+                    {t?.a1_donCatAll || 'All amounts'}
+                  </button>
+                  {categories.map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setFilterCategory(c.key)}
+                      aria-pressed={filterCategory === c.key}
+                      title={`${categoryRangeText(c)} — ${t?.a1_donCatCount || 'donations'}: ${c.count}`}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        filterCategory === c.key
+                          ? 'bg-[#A80808] text-white border-[#A80808]'
+                          : 'bg-white text-ink-soft border-gray-200 hover:border-[#A80808]'
+                      }`}
+                    >
+                      {categoryRangeText(c)}
+                      <span
+                        className={`rounded-full px-1.5 py-px text-[10px] ${
+                          filterCategory === c.key ? 'bg-white/25' : 'bg-gray-100'
+                        }`}
+                      >
+                        {c.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <button
                 type="button"
@@ -919,7 +999,16 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
                               </div>
                               <div>
                                 <p className="text-xs text-gray-400">{t?.donationDetails || 'Donation Details'}</p>
-                                <p className="font-medium text-[#A80808]">Rs. {donation.amount?.toLocaleString() || 0}</p>
+                                <p className="font-medium text-[#A80808]">
+                                  Rs. {donation.amount?.toLocaleString() || 0}
+                                  {/* The short form beside the full one, so a large
+                                      donation can be read at a glance. */}
+                                  {(donation.amount || 0) >= 100000 && (
+                                    <span className="ml-1 text-[11px] font-normal text-gray-400">
+                                      ({shortAmount(donation.amount)})
+                                    </span>
+                                  )}
+                                </p>
                                 <p className="text-gray-600 text-xs">
                                   {t?.method || 'Method'}: {paymentMethodLabel(donation.paymentMethod || 'bank')}
                                 </p>
@@ -945,6 +1034,44 @@ const AdminDonations = ({ donations, setDonations, settings, updateSettings, onS
                                 )}
                                 {donation.message && (
                                   <p className="text-gray-600 text-xs italic mt-1">"{donation.message}"</p>
+                                )}
+                                {/*
+                                  What the donor declared about their means, and
+                                  their own photograph. Shown from the same expanded
+                                  row as everything else, so the committee can check
+                                  a donation without opening another page.
+                                */}
+                                {(donation.employment || donation.businessIncome) && (
+                                  <p className="text-gray-600 text-xs mt-1">
+                                    {t?.a1_donEmploymentLabel || 'Employment'}:{' '}
+                                    <span className="font-semibold text-gray-800">
+                                      {donation.employment || '—'}
+                                    </span>
+                                    {' · '}
+                                    {t?.a1_donBusinessLabel || 'Business income'}:{' '}
+                                    <span className="font-semibold text-gray-800">
+                                      {donation.businessIncome || '—'}
+                                    </span>
+                                  </p>
+                                )}
+                                {donation.photo && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-gray-400">
+                                      {t?.a1_donPhotoDonor || 'Donor photograph'}
+                                    </p>
+                                    <a href={donation.photo} target="_blank" rel="noopener noreferrer">
+                                      <img
+                                        src={donation.photo}
+                                        alt={t?.a1_donPhotoDonor || 'Donor photograph'}
+                                        className="mt-1 h-24 w-24 rounded-lg border border-gray-200 object-cover"
+                                      />
+                                    </a>
+                                    {donation.photoCapturedAt && (
+                                      <p className="text-[11px] text-gray-400 mt-1">
+                                        {formatDate(donation.photoCapturedAt)}
+                                      </p>
+                                    )}
+                                  </div>
                                 )}
                                 {donation.reviewedAt && (
                                   <p className="text-gray-500 text-xs mt-1">

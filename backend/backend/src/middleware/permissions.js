@@ -63,8 +63,8 @@ const areaForAdminPath = (path) => {
  * other key needs "content".
  */
 const SETTINGS_KEY_AREAS = {
-  bookings: ['bookingBgPhoto', 'pujaTypes', 'dateLimits', 'bookingAvailable', 'availabilityMessage', 'bookingContent'],
-  donations: ['donatePageTitle', 'donateIntro', 'donateContent', 'donate'],
+  bookings: ['bookingBgPhoto', 'pujaTypes', 'dateLimits', 'bookingAvailable', 'availabilityMessage', 'bookingContent', 'bookingPage'],
+  donations: ['donatePageTitle', 'donateIntro', 'donateContent', 'donate', 'donationCategories'],
 };
 
 const settingsKeyArea = (key) => {

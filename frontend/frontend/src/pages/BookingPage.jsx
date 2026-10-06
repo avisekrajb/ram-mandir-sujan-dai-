@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import SubTitle from '../components/common/SubTitle';
-import ServiceCharges from '../components/common/ServiceCharges';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +7,8 @@ import { useToast } from '../hooks/useToast';
 import api from '../services/api';
 import { formatDate as formatLocaleDate } from '../utils/formatDate';
 import OmLoader from '../components/common/OmLoader';
+import TempleActivities from '../components/common/TempleActivities';
+import { pickBookingText } from '../data/bookingPageText';
 import { 
   AlertCircle, 
   Check, 
@@ -44,6 +45,10 @@ const BookingPage = () => {
   const [dateLimitMessage, setDateLimitMessage] = useState('');
   const [isDateValidForBooking, setIsDateValidForBooking] = useState(true);
   const [bookingContent, setBookingContent] = useState([]);
+  // Wording saved from Admin → Booking Page Content. Empty until the settings
+  // arrive, and every field is optional, so the page reads exactly as it did
+  // before until an administrator changes something.
+  const [bookingPageText, setBookingPageText] = useState(null);
   const [showMyBookings, setShowMyBookings] = useState(false);
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
@@ -306,7 +311,13 @@ const BookingPage = () => {
     }
   };
 
-  const currentLabels = labels[lang] || labels.en;
+  /*
+   * The wording for this language: whatever Admin → Booking Page Content has
+   * saved, laid over the labels built in below. Anything left blank there keeps
+   * its built-in wording, so an administrator can change one line without having
+   * to retype the other thirty-five.
+   */
+  const currentLabels = pickBookingText(bookingPageText, lang, labels[lang] || labels.en);
   const types = getPujaTypes();
 
   // Get today's date for min date validation
@@ -551,6 +562,10 @@ const BookingPage = () => {
         if (Array.isArray(settings.bookingContent)) {
           setBookingContent(settings.bookingContent);
         }
+
+        if (settings.bookingPage) {
+          setBookingPageText(settings.bookingPage);
+        }
       } catch (error) {
         console.error('Error fetching settings:', error);
       }
@@ -694,9 +709,6 @@ const BookingPage = () => {
     );
   };
 
-  // Where the charges go: after the program-fees section when the admin content has one.
-  const chargesAfterKey = sectionsBefore.some((s) => s.key === 'program-fees') ? 'program-fees' : '';
-
   if (!user) {
     return (
       <main className="min-h-screen" style={{ background: '#ffffff' }}>
@@ -710,10 +722,10 @@ const BookingPage = () => {
                 <Lock size={24} />
               </div>
               <h3 className="text-xl font-serif font-bold text-[#A80808]">{currentLabels.loginRequired}</h3>
-              <p className="text-sm text-gray-500 mt-2">{currentLabels.loginMsg}</p>
+              <p className="text-base text-gray-500 mt-2">{currentLabels.loginMsg}</p>
               <button
                 onClick={() => navigate('/')}
-                className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#A80808] text-white font-semibold text-sm hover:bg-[#660505] transition-all shadow-lg shadow-[#A80808]/20"
+                className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#A80808] text-white font-semibold text-base hover:bg-[#660505] transition-all shadow-lg shadow-[#A80808]/20"
               >
                 {currentLabels.loginContinue}
               </button>
@@ -734,10 +746,8 @@ const BookingPage = () => {
             {sectionsBefore.map((section, index) => (
               <React.Fragment key={section.key || index}>
                 {renderSection(section, index, 0)}
-                {section.key === chargesAfterKey && <ServiceCharges className="mt-14" />}
               </React.Fragment>
             ))}
-            {!chargesAfterKey && <ServiceCharges className="mt-14" />}
           </div>
 
           {/* Form — top right, 40% */}
@@ -752,7 +762,7 @@ const BookingPage = () => {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-8 h-0.5 rounded-full ${bookingAvailable ? 'bg-[#A80808]' : 'bg-gray-400'}`} />
-                      <span className={`text-xs font-bold uppercase tracking-wider ${bookingAvailable ? 'text-[#A80808]' : 'text-gray-400'}`}>
+                      <span className={`text-base font-bold uppercase tracking-wider ${bookingAvailable ? 'text-[#A80808]' : 'text-gray-400'}`}>
                         {bookingAvailable ? currentLabels.bookNowLabel : currentLabels.unavailable}
                       </span>
                     </div>
@@ -760,11 +770,11 @@ const BookingPage = () => {
                     {/* View My Bookings Button */}
                     <button
                       onClick={toggleMyBookings}
-                      className="flex items-center gap-1.5 text-xs text-[#A80808] hover:text-[#660505] font-medium bg-[#A80808]/10 px-3 py-1.5 rounded-full transition-all hover:bg-[#A80808]/20"
+                      className="flex items-center gap-1.5 text-base text-[#A80808] hover:text-[#660505] font-medium bg-[#A80808]/10 px-3 py-1.5 rounded-full transition-all hover:bg-[#A80808]/20"
                     >
                       {showMyBookings ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       {showMyBookings ? currentLabels.hideBookings : currentLabels.viewMyBookings}
-                      <span className="bg-[#A80808] text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                      <span className="bg-[#A80808] text-white text-base w-4 h-4 rounded-full flex items-center justify-center">
                       {myBookings.length}
                     </span>
                   </button>
@@ -772,13 +782,13 @@ const BookingPage = () => {
                 <h2 className={`text-xl md:text-2xl font-serif font-bold ${bookingAvailable ? 'text-[#A80808]' : 'text-gray-400'}`}>
                   {currentLabels.title}
                 </h2>
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-base mt-1">
                   {bookingAvailable ? currentLabels.subtitle : availabilityMessage}
                 </p>
               </div>
 
               {done && (
-                <div className="bg-green-50 text-green-700 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-3 mb-5 border border-green-200">
+                <div className="bg-green-50 text-green-700 px-4 py-3 rounded-xl text-base font-semibold flex items-center gap-3 mb-5 border border-green-200">
                   <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                     <Check size={16} className="text-green-600" />
                   </div>
@@ -789,7 +799,7 @@ const BookingPage = () => {
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
+                    <label className="text-base font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
                       <User size={13} className="text-[#A80808]" />
                       {currentLabels.name} <span className="text-red-500">*</span>
                     </label>
@@ -799,14 +809,14 @@ const BookingPage = () => {
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       aria-label={currentLabels.name}
                       disabled={!bookingAvailable}
-                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-sm bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-base bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder={currentLabels.name}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
+                    <label className="text-base font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
                       <Phone size={13} className="text-[#A80808]" />
                       {currentLabels.phone} <span className="text-red-500">*</span>
                     </label>
@@ -816,7 +826,7 @@ const BookingPage = () => {
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       aria-label={currentLabels.phone}
                       disabled={!bookingAvailable}
-                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-sm bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-3.5 py-2 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-base bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="98XXXXXXXX"
                       required
                     />
@@ -825,7 +835,7 @@ const BookingPage = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
+                    <label className="text-base font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
                       <Calendar size={13} className="text-[#A80808]" />
                       {currentLabels.date} <span className="text-red-500">*</span>
                     </label>
@@ -836,7 +846,7 @@ const BookingPage = () => {
                       onChange={(e) => setForm({ ...form, date: e.target.value })}
                       aria-label={currentLabels.date}
                       disabled={!bookingAvailable}
-                      className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all text-sm bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all text-base bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
                         form.date && !isDateValidForBooking 
                           ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100' 
                           : form.date && isDateValidForBooking
@@ -846,7 +856,7 @@ const BookingPage = () => {
                       required
                     />
                     {form.date && dateLimitMessage && (
-                      <p className={`text-xs mt-1 flex items-center gap-1 ${
+                      <p className={`text-base mt-1 flex items-center gap-1 ${
                         !isDateValidForBooking ? 'text-red-500' : 'text-green-500'
                       }`}>
                         {!isDateValidForBooking ? (
@@ -858,7 +868,7 @@ const BookingPage = () => {
                       </p>
                     )}
                     {form.date && isDateValidForBooking && dateLimits[form.date] !== undefined && dateLimits[form.date] > 0 && (
-                      <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                      <p className="text-base text-green-500 mt-1 flex items-center gap-1">
                         <Check size={12} />
                         {dateLimits[form.date]} {currentLabels.slotsAvailable}
                       </p>
@@ -866,7 +876,7 @@ const BookingPage = () => {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
+                    <label className="text-base font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
                       <Tag size={13} className="text-[#A80808]" />
                       {currentLabels.pujaType} <span className="text-red-500">*</span>
                     </label>
@@ -875,7 +885,7 @@ const BookingPage = () => {
                       onChange={(e) => setForm({ ...form, type: e.target.value })}
                       aria-label={currentLabels.pujaType}
                       disabled={!bookingAvailable}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-sm bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-base bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       required
                     >
                       <option value="">{currentLabels.selectPuja}</option>
@@ -887,16 +897,16 @@ const BookingPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
+                  <label className="text-base font-semibold text-gray-700 block mb-1 flex items-center gap-1.5">
                     <FileText size={13} className="text-[#A80808]" />
-                    {currentLabels.description} <span className="text-gray-400 text-xs">({currentLabels.optional})</span>
+                    {currentLabels.description} <span className="text-gray-400 text-base">({currentLabels.optional})</span>
                   </label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     aria-label={currentLabels.description}
                     disabled={!bookingAvailable}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-sm bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/10 focus:outline-none transition-all text-base bg-gray-50/50 hover:bg-white disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
                     placeholder={currentLabels.descriptionPlaceholder}
                     rows={2}
                   />
@@ -905,7 +915,7 @@ const BookingPage = () => {
                 <button
                   type="submit"
                   disabled={loading || done || !bookingAvailable || (form.date && !isDateValidForBooking)}
-                  className={`w-full py-3 rounded-xl text-white font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all ${
+                  className={`w-full py-3 rounded-xl text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-all ${
                     bookingAvailable && (!form.date || isDateValidForBooking)
                       ? 'bg-[#A80808] hover:bg-[#660505] shadow-lg shadow-[#A80808]/20 hover:shadow-xl hover:shadow-[#A80808]/30' 
                       : 'bg-gray-400 cursor-not-allowed'
@@ -946,14 +956,14 @@ const BookingPage = () => {
                 </button>
 
                 {!bookingAvailable && (
-                  <div className="flex items-center justify-center gap-2 text-xs text-gray-600 bg-gray-50 py-3 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-center gap-2 text-base text-gray-600 bg-gray-50 py-3 rounded-xl border border-gray-200">
                     <Lock size={13} className="text-gray-400" />
                     <span>{availabilityMessage}</span>
                   </div>
                 )}
 
                 {bookingAvailable && form.date && !isDateValidForBooking && (
-                  <div className={`flex items-center justify-center gap-2 text-xs py-2 rounded-xl border ${
+                  <div className={`flex items-center justify-center gap-2 text-base py-2 rounded-xl border ${
                     isPastDate(form.date) ? 'text-red-500 bg-red-50 border-red-200' : 'text-red-500 bg-red-50 border-red-200'
                   }`}>
                     <AlertCircle size={13} className="text-red-500" />
@@ -962,7 +972,7 @@ const BookingPage = () => {
                 )}
 
                 {bookingAvailable && (
-                  <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                  <div className="flex items-center justify-center gap-2 text-base text-gray-400">
                     <Shield size={13} className="text-[#A80808]" />
                     <span>{currentLabels.secure}</span>
                   </div>
@@ -991,14 +1001,14 @@ const BookingPage = () => {
                     <h3 className="text-xl font-serif font-bold text-gray-800">
                       {currentLabels.myBookings}
                     </h3>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                    <span className="text-base text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-full">
                       {myBookings.length}
                     </span>
                   </div>
                   
                   <button
                     onClick={() => navigate('/mybookings')}
-                    className="flex items-center gap-1.5 text-xs text-[#A80808] hover:text-[#660505] font-medium bg-[#A80808]/10 px-3 py-1.5 rounded-full transition-all hover:bg-[#A80808]/20"
+                    className="flex items-center gap-1.5 text-base text-[#A80808] hover:text-[#660505] font-medium bg-[#A80808]/10 px-3 py-1.5 rounded-full transition-all hover:bg-[#A80808]/20"
                   >
                     <ExternalLink size={14} />
                     {t.viewAll || 'View All'}
@@ -1008,7 +1018,7 @@ const BookingPage = () => {
                 {loadingBookings ? (
                   <div className="text-center py-8">
                     <OmLoader size="md" color="maroon" className="mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Loading your bookings...</p>
+                    <p className="text-base text-gray-500">Loading your bookings...</p>
                   </div>
                 ) : myBookings.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100">
@@ -1016,7 +1026,7 @@ const BookingPage = () => {
                       <Calendar size={28} className="text-gray-400" />
                     </div>
                     <h4 className="text-lg font-serif font-semibold text-gray-700">{currentLabels.noBookings}</h4>
-                    <p className="text-sm text-gray-400 mt-1">{currentLabels.makeBooking}</p>
+                    <p className="text-base text-gray-400 mt-1">{currentLabels.makeBooking}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1034,52 +1044,52 @@ const BookingPage = () => {
                         
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(booking.status)}`}>
+                            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-base font-semibold border ${getStatusColor(booking.status)}`}>
                               {getStatusIcon(booking.status)}
                               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                             </div>
-                            <span className="text-xs text-gray-400 font-mono">
+                            <span className="text-base text-gray-400 font-mono">
                               #{booking._id.slice(-6)}
                             </span>
                           </div>
 
                           <div className="mb-2">
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-[#A80808] bg-[#A80808]/10 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-base font-medium text-[#A80808] bg-[#A80808]/10 px-2 py-0.5 rounded-full">
                               <Tag size={10} />
                               {booking.type}
                             </span>
                           </div>
 
-                          <h4 className="text-sm font-semibold text-gray-800 truncate">
+                          <h4 className="text-base font-semibold text-gray-800 truncate">
                             {booking.name}
                           </h4>
 
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                          <div className="flex items-center gap-1.5 text-base text-gray-500 mt-1">
                             <Phone size={11} className="text-[#A80808]" />
                             <span>{booking.phone}</span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                          <div className="flex items-center gap-1.5 text-base text-gray-500 mt-0.5">
                             <Calendar size={11} className="text-[#A80808]" />
                             <span>{booking.date}</span>
                           </div>
 
                           {booking.description && (
                             <div className="mt-2 pt-2 border-t border-gray-100">
-                              <p className="text-xs text-gray-500 line-clamp-1">
+                              <p className="text-base text-gray-500 line-clamp-1">
                                 {booking.description}
                               </p>
                             </div>
                           )}
 
                           <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                            <span className="text-xs text-gray-400">
+                            <span className="text-base text-gray-400">
                               {formatDate(booking.createdAt, lang)}
                             </span>
                             <button
                               onClick={() => downloadBookingPDF(booking._id)}
                               disabled={downloadingId === booking._id}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-base font-medium transition-all ${
                                 downloadingId === booking._id
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                   : 'bg-[#A80808]/10 text-[#A80808] hover:bg-[#A80808] hover:text-white'
@@ -1108,6 +1118,10 @@ const BookingPage = () => {
           )}
         </div>
       </div>
+
+      {/* The temple's activities and working history. After the booking form,
+          not before it: this page is for booking a puja. */}
+      <TempleActivities />
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {

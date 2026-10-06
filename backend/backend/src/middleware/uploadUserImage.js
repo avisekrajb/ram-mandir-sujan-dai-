@@ -46,5 +46,10 @@ const userUploadLimiter = rateLimit({
 module.exports = {
   profilePhotoUpload: makeUserImageUpload(5),
   paymentScreenshotUpload: makeUserImageUpload(10),
+  // The donor's own photograph, taken live in the browser. Its own instance so
+  // the limit can be tighter than a payment receipt's: this picture is of a
+  // person, it is kept with the donation record, and 5 MB is far more than a
+  // camera frame needs.
+  donationPhotoUpload: makeUserImageUpload(5),
   userUploadLimiter,
 };

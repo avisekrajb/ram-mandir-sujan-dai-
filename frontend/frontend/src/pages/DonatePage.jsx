@@ -9,6 +9,18 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import OmLoader from '../components/common/OmLoader';
 import DonationReceipt from '../components/common/DonationReceipt';
+import AcknowledgementSection from '../components/common/AcknowledgementSection';
+import SelfieCapture from '../components/common/SelfieCapture';
+import {
+  MAX_DONATION,
+  amountFieldWidth,
+  amountInWords,
+  amountWithShort,
+  groupedAmount,
+  isWideAmount,
+  needsDeclaredIncome,
+  overDonationLimit,
+} from '../utils/money';
 import { 
   QrCode,
   AlertCircle,
@@ -606,7 +618,7 @@ const DonationAccountDetails = ({ accounts, qrImage, qrEnabled, qrLoading, t, va
    attaches a payment screenshot and/or a transaction number so the committee
    has something to verify against; at least one of the two is required.
    ============================================================ */
-const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, setEmail, phone, setPhone, message, setMessage, onSubmitted, showHeading = true }) => {
+const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, setEmail, phone, setPhone, message, setMessage, employment, setEmployment, businessIncome, setBusinessIncome, photo, setPhoto, onSubmitted, showHeading = true, titleKey, titleFallback, hintKey, hintFallback }) => {
   const { showToast } = useToast();
 
   const [screenshot, setScreenshot] = useState(null);
@@ -678,8 +690,51 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
       return;
     }
 
-    if (!amount || Number(amount) < 1) {
-      showToast(t?.validAmount || 'Please enter a valid amount', 'error');
+if (!amount || Number(amount) < 1) {
+      showToast(t.validAmount || 'Please enter a valid amount', 'error');
+      return;
+    }
+
+    /*
+     * Fifty lakh is the ceiling for one transaction. Said before the photograph
+     * and the rest are collected, so a donor planning a larger gift is told
+     * immediately and can start the second donation rather than filling the form
+     * in twice to find out at the end.
+     */
+if (overDonationLimit(amount)) {
+      showToast(
+        (t.a1_donLimitHit || 'A single donation cannot be more than 50 lakh (50,00,000).') +
+          ' ' +
+          (t.a1_donSplitHint ||
+            'Please send it as a second donation, one transaction of up to 50 lakh each.'),
+        'error'
+      );
+      return;
+    }
+
+    /*
+     * The same required fields the online form has. A bank transfer is a
+     * donation like any other, so it is held to the same rule rather than
+     * becoming the easy way round it.
+     */
+    const missing = [];
+    if (!name?.trim()) missing.push(t?.yourName || 'Your Name');
+    if (!email?.trim()) missing.push(t?.yourEmail || 'Your Email');
+    if (!phone?.trim()) missing.push(t?.phoneNumber || 'Phone Number');
+    if (!message?.trim()) missing.push(t?.donateMessage || 'Message');
+    // Only from ten lakh up, the same test the form uses to decide whether to
+    // show them at all. A field the donor was never shown cannot be one they are
+    // told they are missing.
+    if (needsDeclaredIncome(amount)) {
+      if (!employment?.trim()) missing.push(t?.a1_donEmployment || 'Salary / Employment');
+      if (!businessIncome?.trim()) missing.push(t?.a1_donBusiness || 'Business Income');
+      if (!photo) missing.push(t?.a1_donPhotoLabel || 'Your Photograph');
+    }
+    if (missing.length > 0) {
+      showToast(
+        (t.a1_donStillNeeded || 'Still needed: {list}').replace('{list}', missing.join(', ')),
+        'error'
+      );
       return;
     }
 
@@ -699,13 +754,19 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
         if (!screenshotUrl) throw new Error('Screenshot upload failed');
       }
 
-      await api.post('/donations', {
+await api.post('/donations', {
         amount: Number(amount),
         paymentMethod: 'bank',
         name: name || user.name,
         email: email || user.email,
         phone: phone || user.phone || '',
         message: message || '',
+        // The same declared fields and selfie the gateway forms collect, so a
+        // bank transfer is recorded in exactly the same shape and the admin
+        // panel shows one kind of record rather than two.
+        employment: (employment || '').trim(),
+        businessIncome: (businessIncome || '').trim(),
+        photo: photo || '',
         transactionId: transactionId.trim(),
         screenshot: screenshotUrl,
       });
@@ -748,12 +809,12 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
           </div>
           <div className="min-w-0">
             <h2 className={`font-serif ${showHeading ? 'text-2xl sm:text-3xl' : 'text-lg'}`}>
-              {t?.submitDonationProof || 'Submit Your Donation Proof'}
-            </h2>
-            <p className="text-white/80 text-sm mt-0.5">
-              {t?.submitDonationProofHint ||
-                'Transferred the money already? Send us the screenshot or transaction number and we will verify it.'}
-            </p>
+{t?.[titleKey] || titleFallback || t?.submitDonationProof || 'Submit Your Donation Proof'}
+               </h2>
+               <p className="text-white/80 text-sm mt-0.5">
+                 {t?.[hintKey] || hintFallback || t?.submitDonationProofHint ||
+                   'Transferred the money already? Send us the screenshot or transaction number and we will verify it.'}
+               </p>
           </div>
         </div>
       </div>
@@ -808,15 +869,30 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={1}
+                  max={MAX_DONATION}
                   value={amount}
                   onChange={(e) =>
                     setAmount(e.target.value === '' ? '' : Number(e.target.value))
                   }
-                  className={inputClass}
+                  // Same widening as the main amount field, so the two do not
+                  // behave differently: this form has its own input, not that one.
+style={{ width: `${amountFieldWidth(amount)}%` }}
+                  className={`${inputClass} max-w-full transition-[width] duration-200 ease-out`}
                   placeholder={t?.enterAmount || 'Enter amount'}
-                
-      autoComplete="off"/>
+                  autoComplete="off"
+                />
+                {/*
+                  The figure in words, as on a cheque, so a large transfer can be
+                  checked against what the bank actually shows. Same helper as the
+                  main form, from one lakh up, updating as the digits change.
+                */}
+                {amountInWords(amount) && (
+                  <p role="status" className="mt-1.5 text-xs font-medium text-[#A80808]">
+                    {amountInWords(amount)}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -858,8 +934,8 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="min-w-0">
-                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.phoneNumber || 'Phone Number'}
+<label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                  {t?.phoneNumber || 'Phone Number'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -867,12 +943,12 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
                   onChange={(e) => setPhone(e.target.value)}
                   className={inputClass}
                   placeholder="98XXXXXXXX"
-                
-      autoComplete="off"/>
+                  required
+                  autoComplete="off"/>
               </div>
-              <div className="min-w-0">
+<div className="min-w-0">
                 <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.message || 'Message'} ({t?.optional || 'optional'})
+                  {t?.message || 'Message'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -880,11 +956,69 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
                   onChange={(e) => setMessage(e.target.value)}
                   className={inputClass}
                   placeholder={t?.messagePlaceholder || 'Your message...'}
-                
-      autoComplete="off"/>
+                  required
+                  autoComplete="off"/>
               </div>
             </div>
-          </div>
+
+            {/*
+                The declared sources of income and the donor's own photograph:
+                the same fields the online form asks for, so a bank transfer is
+                recorded in the same shape and the admin panel shows one kind of
+                record rather than two. Shown only from ten lakh up, exactly as on
+                the online form.
+              */}
+              {needsDeclaredIncome(amount) && (
+                <>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="proof-employment" className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                        {t?.a1_donEmployment || 'Salary / Employment'} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="proof-employment"
+                        type="text"
+                        value={employment || ''}
+                        onChange={(e) => setEmployment?.(e.target.value)}
+                        className={inputClass}
+                        placeholder={t?.a1_donEmploymentPh || 'e.g. Teacher, or Government Service'}
+                        required
+                        autoComplete="off"/>
+                    </div>
+                    <div>
+                      <label htmlFor="proof-business" className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                        {t?.a1_donBusiness || 'Business Income'} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="proof-business"
+                        type="text"
+                        value={businessIncome || ''}
+                        onChange={(e) => setBusinessIncome?.(e.target.value)}
+                        className={inputClass}
+                        placeholder={t?.a1_donBusinessPh || 'e.g. Shop, or Farm'}
+                        required
+                        autoComplete="off"/>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                      {t?.a1_donPhotoLabel || 'Your Photograph'} <span className="text-red-500">*</span>
+                    </label>
+                    {/*
+                      The same selfie capture as the online form, including the
+                      five-second automatic capture. There is no file picker, so the
+                      photograph cannot be one taken from somewhere else.
+                    */}
+                    <SelfieCapture
+                      photoUrl={photo || ''}
+                      onChange={(url) => setPhoto?.(url)}
+                      t={t}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
 
           {/* ---------- Right: the proof panel ---------- */}
           <div className="lg:col-span-5">
@@ -1118,6 +1252,11 @@ const DonatePage = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  // Required with every donation: what the donor earns, what their business
+  // brings in, and their own photograph taken live (see SelfieCapture).
+  const [employment, setEmployment] = useState("");
+  const [businessIncome, setBusinessIncome] = useState("");
+  const [photo, setPhoto] = useState("");
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showRedirect, setShowRedirect] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -1127,6 +1266,58 @@ const DonatePage = () => {
   const [qrLoading, setQrLoading] = useState(true);
 
   const tiers = [108, 501, 1100, 2100, 5100, 11000];
+
+  /*
+   * Fifty lakh is the most one donation can be. Refused as it is typed rather
+   * than on submit, so the donor is told while they can still change it.
+   */
+  const amountOverLimit = overDonationLimit(amount);
+  const onAmountChange = (next) => {
+    // Clamped rather than rejected: typing "5000001" should leave 5000000, not
+    // fight the donor's keystroke.
+    setAmount(next === '' ? '' : Math.min(next, MAX_DONATION));
+  };
+
+  /*
+   * The amount box widens as the number grows and narrows again when digits are
+   * deleted: a three-figure amount does not need the room a fifty-lakh one does.
+   * The width comes from money.js so both amount fields on the page (the quick
+   * amount form and the main one) behave the same way.
+   */
+  const amountWidth = amountFieldWidth(amount);
+  const amountWords = amountInWords(amount);
+
+  /*
+   * The declared sources of income and the donor's photograph are asked for only
+   * from ten lakh up. Below that the field is short, the amount is a small
+   * figure, and asking for an income declaration and a selfie for a five-hundred
+   * rupee donation is not reasonable — so they are not shown, not marked
+   * required, and the server does not ask for them either (needsDeclaredIncome is
+   * the same test on both sides).
+   */
+  const showDeclaredFields = needsDeclaredIncome(amount);
+
+  /*
+   * Every field on the form is required, so the list of what is still missing is
+   * worked out once here and shown to the donor. Naming the fields beats a
+   * submit that silently refuses.
+   */
+const requiredFields = useMemo(
+    () => [
+      { key: 'amount', label: t.a1_donAmount || 'Amount', done: Number(amount) > 0 && !amountOverLimit },
+      { key: 'name', label: t.yourName || 'Your Name', done: !!name.trim() },
+      { key: 'email', label: t.yourEmail || 'Your Email', done: !!email.trim() },
+      { key: 'phone', label: t.phoneNumber || 'Phone Number', done: !!phone.trim() },
+      { key: 'message', label: t.donateMessage || 'Message', done: !!message.trim() },
+      // Asked for only from ten lakh up, and listed only then: a field the donor
+      // cannot see is not a field still missing.
+      { key: 'employment', label: t.a1_donEmployment || 'Salary / Employment', done: !showDeclaredFields || !!employment.trim(), hidden: !showDeclaredFields },
+      { key: 'businessIncome', label: t.a1_donBusiness || 'Business Income', done: !showDeclaredFields || !!businessIncome.trim(), hidden: !showDeclaredFields },
+      { key: 'photo', label: t.a1_donPhotoLabel || 'Your Photograph', done: !showDeclaredFields || !!photo, hidden: !showDeclaredFields },
+    ],
+    [amount, amountOverLimit, name, email, phone, message, employment, businessIncome, photo, showDeclaredFields, t]
+  );
+  const missingRequired = requiredFields.filter((f) => !f.done && !f.hidden).map((f) => f.label);
 
   const gatewayColors = {
     esewa: { base: '#60BB46', hover: '#4CAF50' },
@@ -1271,6 +1462,9 @@ const DonatePage = () => {
         email: email || user.email,
         phone: phone || user.phone,
         message: message || '',
+        employment: employment.trim(),
+        businessIncome: businessIncome.trim(),
+        photo,
       });
 
       if (!response.data.success) {
@@ -1320,6 +1514,9 @@ const DonatePage = () => {
         email: email || user.email,
         phone: phone || user.phone,
         message: message || '',
+        employment: employment.trim(),
+        businessIncome: businessIncome.trim(),
+        photo,
       });
 
       if (!response.data.success) {
@@ -1369,6 +1566,9 @@ const DonatePage = () => {
         email: email || user.email,
         phone: phone || user.phone,
         message: message || '',
+        employment: employment.trim(),
+        businessIncome: businessIncome.trim(),
+        photo,
       });
 
       if (!response.data.success) {
@@ -1403,6 +1603,44 @@ const DonatePage = () => {
       return;
     }
 
+    /*
+     * Checked before any payment method is chosen, not after: eSewa, Khalti and
+     * IPS each start their own request, so validating after those hand-offs meant
+     * the ceiling and the required fields were only enforced on the manual
+     * transfer path — which is not the path most donors take.
+     */
+    if (!amount || Number(amount) < 1) {
+      showToast(t.validAmount || 'Please enter a valid amount', 'error');
+      return;
+    }
+
+    /*
+     * Fifty lakh is the ceiling for one transaction. Said before the photograph
+     * and the rest are collected, so a donor planning a larger gift is told
+     * immediately and can start the second donation rather than filling the form
+     * in twice to find out at the end.
+     */
+    if (overDonationLimit(amount)) {
+      showToast(
+        (t.a1_donLimitHit || 'A single donation cannot be more than 50 lakh (50,00,000).') +
+          ' ' +
+          (t.a1_donSplitHint ||
+            'Please send it as a second donation, one transaction of up to 50 lakh each.'),
+        'error'
+      );
+      return;
+    }
+
+    // Everything on the form is required. The server refuses an incomplete
+    // donation; saying so here saves the donor a round trip.
+    if (missingRequired.length > 0) {
+      showToast(
+        (t.a1_donStillNeeded || 'Still needed: {list}').replace('{list}', missingRequired.join(', ')),
+        'error'
+      );
+      return;
+    }
+
     if (selectedMethod === 'esewa') {
       await handleEsewaPayment();
       return;
@@ -1418,11 +1656,10 @@ const DonatePage = () => {
       return;
     }
 
-    if (!amount || Number(amount) < 1) {
-      showToast(t.validAmount || 'Please enter a valid amount', 'error');
-      return;
-    }
-
+    /*
+     * Bank transfer and cash. The amount, the ceiling and the required fields
+     * were all checked at the top of this function, before the gateways above.
+     */
     setLoading(true);
     try {
       const response = await api.post('/donations', { 
@@ -1432,6 +1669,9 @@ const DonatePage = () => {
         email: email || user?.email || '',
         phone: phone || user?.phone || '',
         message: message || '',
+        employment: employment.trim(),
+        businessIncome: businessIncome.trim(),
+        photo,
       });
       
       setDone(true);
@@ -1610,7 +1850,7 @@ const DonatePage = () => {
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className="lg:col-span-7"
             >
-              <DonationProofForm
+<DonationProofForm
                 t={t}
                 user={user}
                 amount={amount}
@@ -1623,6 +1863,19 @@ const DonatePage = () => {
                 setPhone={setPhone}
                 message={message}
                 setMessage={setMessage}
+                employment={employment}
+                setEmployment={setEmployment}
+                businessIncome={businessIncome}
+                setBusinessIncome={setBusinessIncome}
+                photo={photo}
+                setPhoto={setPhoto}
+                /* No gateway is switched on, so this is the only way to give.
+                   It is titled as what it is — supporting the temple — rather
+                   than as a payment form that is not being paid. */
+                titleKey="a1_donSupportTitle"
+                titleFallback="Support the Temple"
+                hintKey="a1_donSupportHint"
+                hintFallback="Transfer the amount to the account shown, then send the payment proof here. Each donation is recorded separately."
                 onSubmitted={() => {
                   setCurrentDonation(null);
                   setShowReceipt(false);
@@ -1689,17 +1942,73 @@ const DonatePage = () => {
 
             <div className="mb-6">
               <label className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
-                {t.customAmount || 'Custom Amount'} (NPR)
+                {t.customAmount || 'Custom Amount'} (NPR) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
+                max={MAX_DONATION}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-all"
+                onChange={(e) => onAmountChange(e.target.value === "" ? "" : Number(e.target.value))}
+                // The width tracks the amount: a three-figure amount does not need
+                // the room a fifty-lakh one does, and the box narrows again when
+                // digits are deleted. Set inline, so it beats the `w-full` on the
+                // shared input class, and transitioned so it eases rather than jumps.
+                style={{ width: `${amountWidth}%` }}
+                className="max-w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-[width] duration-200 ease-out"
                 placeholder="Enter amount"
-              
-      autoComplete="off"/>
+                autoComplete="off"
+              />
+              {amountOverLimit ? (
+                /*
+                  Over the ceiling. The field is already clamped, so this only shows
+                  for a moment if a quick-amount button or a pasted figure crosses
+                  it — which is why it explains the way out rather than only saying
+                  no.
+                */
+                <div role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-red-700">
+                    {t.a1_donLimitHit ||
+                      'A single donation cannot be more than 50 lakh (50,00,000).'}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-red-700">
+                    {t.a1_donSplitHint ||
+                      'To give more than this, please send it as a second donation — a separate transaction of up to 50 lakh each. Each one is recorded on its own, so the payment stays secure and verifiable.'}
+                  </p>
+                </div>
+              ) : (
+                /*
+                  From ten lakh up the amount is also written short beside the full
+                  figure, so a large number can be read at a glance: 10L (10,00,000).
+                  Shown only in the wide bands, where there is room beside it.
+                */
+isWideAmount(amount) && (
+                  <p className="mt-1.5 text-xs text-mute">
+                    NPR {amountWithShort(amount)}
+                  </p>
+                )
+              )}
+
+              {/*
+                The same figure written out in words, as it would be on a
+                cheque, so a large amount can be checked digit by digit instead
+                of taken on trust from the box. Appears from one lakh up — below
+                that the digits are short enough to read directly — and updates
+                on every keystroke, so it always matches what is in the field.
+                Named so a screen reader hears it change.
+              */}
+              {amountWords && (
+                <p role="status" className="mt-1.5 text-xs font-medium text-[#A80808]">
+                  {amountWords}
+                </p>
+              )}
+              {!amountOverLimit && (
+                <p className="mt-1 text-[11px] text-mute">
+                  {t.a1_donLimitHint ||
+                    `The most you can give in one donation is ${groupedAmount(MAX_DONATION)} (50 lakh). To give more, send a second donation.`}
+                </p>
+              )}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
@@ -1738,7 +2047,7 @@ const DonatePage = () => {
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
-                  {t.phoneNumber || 'Phone Number'}
+                  {t.phoneNumber || 'Phone Number'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -1746,12 +2055,12 @@ const DonatePage = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-all"
                   placeholder="98XXXXXXXX"
-                
-      autoComplete="off"/>
+                  required
+                  autoComplete="off"/>
               </div>
               <div>
                 <label className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
-                  Message (Optional)
+                  {t.donateMessage || 'Message'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1759,14 +2068,77 @@ const DonatePage = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-all"
                   placeholder="Your message..."
-                
-      autoComplete="off"/>
+                  required
+                  autoComplete="off"/>
               </div>
             </div>
 
+            {/*
+              What the donor declares about their means, and their own
+              photograph. The committee treats a donation from someone whose
+              means are on record differently from an anonymous one, so all
+              three are required. The photograph is taken live in the browser —
+              there is no file picker, so it cannot be a picture from elsewhere.
+            */}
+{showDeclaredFields && (
+              <>
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="donor-employment" className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
+                  {t.a1_donEmployment || 'Salary / Employment'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="donor-employment"
+                  type="text"
+                  value={employment}
+                  onChange={(e) => setEmployment(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-all"
+                  placeholder={t.a1_donEmploymentPh || 'e.g. Teacher, or Government Service'}
+                  required
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label htmlFor="donor-business" className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
+                  {t.a1_donBusiness || 'Business Income'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="donor-business"
+                  type="text"
+                  value={businessIncome}
+                  onChange={(e) => setBusinessIncome(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#A80808] focus:ring-2 focus:ring-[#A80808]/20 outline-none transition-all"
+                  placeholder={t.a1_donBusinessPh || 'e.g. Shop, or Farm'}
+                  required
+                  autoComplete="off"
+/>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-mute mb-1.5 uppercase tracking-wider">
+                {t.a1_donPhotoLabel || 'Your Photograph'} <span className="text-red-500">*</span>
+              </label>
+              <SelfieCapture
+                photoUrl={photo}
+                onChange={setPhoto}
+                t={t}
+              />
+            </div>
+              </>
+            )}
+
+            {/* Listed so the required fields cannot be missed on a long form. */}
+            <p role="status" className="mb-6 text-xs text-mute">
+              {missingRequired.length > 0
+                ? (t.a1_donStillNeeded || 'Still needed: {list}')
+                    .replace('{list}', missingRequired.join(', '))
+                : (t.a1_donAllReady || 'Everything is filled in. You can donate now.')}
+            </p>
+
             <button
               onClick={handleDonate}
-              disabled={loading || done || paymentProcessing}
+              disabled={loading || done || paymentProcessing || missingRequired.length > 0 || amountOverLimit}
               className="w-full px-8 py-3.5 text-sm font-semibold text-white rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: gatewayColors[activeMethod].base }}
               onMouseEnter={(e) => { 
@@ -1948,7 +2320,7 @@ const DonatePage = () => {
         {/* Manual / bank transfer donations, submitted with a screenshot or
             transaction number for the committee to verify. */}
         <div className="mt-8">
-          <DonationProofForm
+<DonationProofForm
             t={t}
             user={user}
             amount={amount}
@@ -1961,6 +2333,12 @@ const DonatePage = () => {
             setPhone={setPhone}
             message={message}
             setMessage={setMessage}
+            employment={employment}
+            setEmployment={setEmployment}
+            businessIncome={businessIncome}
+            setBusinessIncome={setBusinessIncome}
+            photo={photo}
+            setPhoto={setPhoto}
             onSubmitted={() => {
               setDone(false);
               setShowReceipt(false);
@@ -1984,6 +2362,10 @@ const DonatePage = () => {
       )}
 
       <DonatePageContent settings={settings} />
+
+      {/* The acknowledgement of every contribution received, which closes the
+          page. Last, so it never interrupts the giving form above it. */}
+      <AcknowledgementSection />
     </div>
   );
 };

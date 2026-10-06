@@ -694,6 +694,94 @@ aboutPreview: {
     secureBooking: { type: String, default: '100%' },
     support: { type: String, default: '24/7' },
   },
+  // ============================================
+  // BOOKING PAGE WORDING
+  // ============================================
+  // The booking page's own wording: heading, form labels, buttons and messages.
+  // The section titles and bullet points are `bookingContent` above; this is the
+  // rest of the text on the page, and it is managed from Admin → Booking Page
+  // Content.
+  //
+  // Every field is left empty by default, which means "not overridden": the page
+  // keeps the wording it ships with until an administrator types something. That
+  // is why nothing here needs a default value of its own.
+  // ============================================
+  // DONATION AMOUNT CATEGORIES
+  // ============================================
+  // The buckets Admin → Donations files donors into, by how much they gave.
+  // The ranges are editable, which is why they are data rather than code.
+  //
+  // No `min`/`max` is hard-coded into the query: the bucket a donation falls in
+  // is worked out from whatever the ranges say at the time the list is asked
+  // for. Changing a range therefore re-files every past donation at once,
+  // instead of leaving each record stamped with the bucket it was filed under
+  // when it arrived.
+  donationCategories: {
+    type: [{
+      key: { type: String, default: '' },
+      label: { type: localizedStringSchema, default: () => ({}) },
+      min: { type: Number, default: 0 },
+      // Left null this bucket has no upper bound, which is how the last one is
+      // written: the top bucket should keep taking the largest donations.
+      max: { type: Number, default: null },
+      order: { type: Number, default: 0 },
+      enabled: { type: Boolean, default: true },
+    }],
+    default: () => [
+      { key: 'under-100k', min: 1, max: 100000, order: 0, enabled: true },
+      { key: '100k-1m', min: 100000, max: 1000000, order: 1, enabled: true },
+      { key: '1m-plus', min: 1000000, max: null, order: 2, enabled: true },
+    ],
+  },
+
+  bookingPage: {
+    enabled: { type: Boolean, default: true },
+    heading: {
+      title: { type: localizedStringSchema, default: () => ({}) },
+      subtitle: { type: localizedStringSchema, default: () => ({}) },
+      templeDesc: { type: localizedStringSchema, default: () => ({}) },
+    },
+    fields: {
+      name: { type: localizedStringSchema, default: () => ({}) },
+      phone: { type: localizedStringSchema, default: () => ({}) },
+      date: { type: localizedStringSchema, default: () => ({}) },
+      pujaType: { type: localizedStringSchema, default: () => ({}) },
+      description: { type: localizedStringSchema, default: () => ({}) },
+      descriptionPlaceholder: { type: localizedStringSchema, default: () => ({}) },
+      optional: { type: localizedStringSchema, default: () => ({}) },
+      selectPuja: { type: localizedStringSchema, default: () => ({}) },
+      bookYourPuja: { type: localizedStringSchema, default: () => ({}) },
+    },
+    buttons: {
+      bookNow: { type: localizedStringSchema, default: () => ({}) },
+      bookNowLabel: { type: localizedStringSchema, default: () => ({}) },
+      loginContinue: { type: localizedStringSchema, default: () => ({}) },
+      viewMyBookings: { type: localizedStringSchema, default: () => ({}) },
+      hideBookings: { type: localizedStringSchema, default: () => ({}) },
+      downloadBooking: { type: localizedStringSchema, default: () => ({}) },
+      download: { type: localizedStringSchema, default: () => ({}) },
+      makeBooking: { type: localizedStringSchema, default: () => ({}) },
+    },
+    messages: {
+      booking: { type: localizedStringSchema, default: () => ({}) },
+      secure: { type: localizedStringSchema, default: () => ({}) },
+      unavailable: { type: localizedStringSchema, default: () => ({}) },
+      loginRequired: { type: localizedStringSchema, default: () => ({}) },
+      loginMsg: { type: localizedStringSchema, default: () => ({}) },
+      thankYou: { type: localizedStringSchema, default: () => ({}) },
+      unavailableMsg: { type: localizedStringSchema, default: () => ({}) },
+      dateLimitMsg: { type: localizedStringSchema, default: () => ({}) },
+      pastDateMsg: { type: localizedStringSchema, default: () => ({}) },
+      limitReached: { type: localizedStringSchema, default: () => ({}) },
+      available: { type: localizedStringSchema, default: () => ({}) },
+      noSlots: { type: localizedStringSchema, default: () => ({}) },
+      slotsAvailable: { type: localizedStringSchema, default: () => ({}) },
+      myBookings: { type: localizedStringSchema, default: () => ({}) },
+      noBookings: { type: localizedStringSchema, default: () => ({}) },
+      bookingDetails: { type: localizedStringSchema, default: () => ({}) },
+    },
+  },
+
   bookingBgPhoto: {
     type: String,
     default: '/4.jpg',

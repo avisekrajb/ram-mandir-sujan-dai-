@@ -114,6 +114,7 @@ export const AREA_FOR_PAGE = {
   'facebook-video': 'content',
   users: 'users',
   bookings: 'bookings',
+  'booking-content': 'bookings',
   donations: 'donations',
   contact: 'contact',
   newsletter: 'contact',

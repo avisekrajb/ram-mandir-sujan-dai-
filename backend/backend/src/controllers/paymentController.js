@@ -109,9 +109,88 @@ const loadDonationForVerify = async (req, res, donationId) => {
 };
 
 // A real, finite rupee amount: not NaN / Infinity / text, at least Rs. 1, at most Rs. 1 crore.
+/**
+ * Fifty lakh in one transaction, the same ceiling as the manual donation route.
+ * It has to be repeated here: these three endpoints each create their own
+ * Donation, so a rule that only lived on the manual route would leave the
+ * gateways — which is how most donations are actually paid for — unrestricted.
+ */
+const MAX_DONATION = 5000000;
+
+/*
+ * From this amount up, a donor declares where the money came from and takes a
+ * photograph of themselves; below it neither is asked for. Must stay the same
+ * figure as DECLARED_INCOME_FROM in routes/donationRoutes.js and
+ * WIDE_AMOUNT_FROM in frontend/src/utils/money.js — the form hides the fields at
+ * this line, and all three paths stop demanding them at the same one.
+ */
+const DECLARED_INCOME_FROM = 1000000;
+
 const isValidAmount = (amount) => {
   const n = Number(amount);
-  return Number.isFinite(n) && n >= 1 && n <= 10000000;
+  return Number.isFinite(n) && n >= 1 && n <= MAX_DONATION;
+};
+
+/*
+ * What the donor declared, and their photograph. Taken from the request on the
+ * way past: these endpoints create the Donation, so a field not read here is a
+ * field the admin never sees. The photograph is checked to be our own Cloudinary
+ * address, for the same reason as on the manual route — it is displayed in the
+ * admin panel and must not be an arbitrary URL a donor typed in.
+ */
+const declaredFields = (req, required) => {
+  const { employment, businessIncome, photo } = req.body || {};
+  const job = String(employment || '').trim();
+  const business = String(businessIncome || '').trim();
+  const pic = String(photo || '').trim();
+
+  let picOk = false;
+  if (pic) {
+    try {
+      const u = new URL(pic);
+      const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+      picOk = u.protocol === 'https:' && u.hostname === 'res.cloudinary.com' && !u.username && !u.password &&
+        (cloud ? u.pathname.startsWith(`/${cloud}/image/`) : /^\/[^/]+\/image\//.test(u.pathname));
+    } catch { /* not a URL */ }
+  }
+
+  return {
+    // Only demanded from ten lakh up. Below that `required` is false and any of
+    // them may be absent — but if a value was sent it is still stored, so a
+    // donor who filled them in anyway is not losing what they typed.
+    ok: !required || (!!job && !!business && picOk),
+    fields: {
+      employment: job,
+      businessIncome: business,
+      photo: picOk ? pic : null,
+      photoCapturedAt: picOk ? new Date() : null,
+    },
+  };
+};
+
+/** The refusal, said the same way on all three gateways. */
+const missingDeclared = {
+  employment: 'Please enter your salary or employment.',
+  businessIncome: 'Please enter your business income.',
+  photo: 'Please take your photograph. It is required with every donation.',
+};
+
+/**
+ * The refusal, said the same way on all three gateways. `photoGiven` and
+ * `photoAccepted` are separate: a photograph that was sent but is not our own
+ * Cloudinary address gets the "use the camera button" wording, because the donor
+ * did take one and only the address is wrong.
+ */
+const declaredError = ({ job, business, photoGiven, photoAccepted }) => {
+  // In order of the form: employment, then business income, then photograph.
+  if (!job) return missingDeclared.employment;
+  if (!business) return missingDeclared.businessIncome;
+  if (!photoAccepted) {
+    return photoGiven
+      ? 'Please take your photograph using the camera button.'
+      : missingDeclared.photo;
+  }
+  return null;
 };
 
 const sameAmount = (a, b) => Math.abs(Number(String(a).replace(/,/g, '')) - Number(b)) < 0.005;
@@ -121,7 +200,26 @@ exports.initiateEsewaPayment = async (req, res) => {
     const { amount, name, email, phone } = req.body;
 
     if (!isValidAmount(amount)) {
-      return res.status(400).json({ message: 'Invalid amount' });
+      // 'Invalid amount' also covers an amount over the ceiling; say so, because a
+      // donor who typed too much zeroes needs to know it is a second transaction,
+      // not a typo.
+      return res.status(400).json(
+        Number(amount) > MAX_DONATION
+          ? { message: 'A single donation cannot be more than 50 lakh (50,00,000). Please send it as a second donation, one transaction of up to 50 lakh each.' }
+          : { message: 'Invalid amount' }
+      );
+    }
+
+const declared = declaredFields(req, Number(amount) >= DECLARED_INCOME_FROM);
+    if (!declared.ok) {
+      return res.status(400).json({
+        message: declaredError({
+          job: String(req.body?.employment || '').trim(),
+          business: String(req.body?.businessIncome || '').trim(),
+          photoGiven: !!String(req.body?.photo || '').trim(),
+          photoAccepted: !!declared.fields.photo,
+        })
+      });
     }
 
     const merchantId = process.env.ESEWA_MERCHANT_ID || 'EPAYTEST';
@@ -138,12 +236,13 @@ exports.initiateEsewaPayment = async (req, res) => {
 
     const transactionUuid = generateTransactionUuid('TXN');
 
-    const donation = await Donation.create({
+const donation = await Donation.create({
       userId: req.user.id,
       name: name || req.user.name,
       email: email || req.user.email,
       phone: phone || req.user.phone,
       amount: Number(amount),
+      ...declared.fields,
       transactionId: transactionUuid,
       status: 'pending',
       paymentMethod: 'esewa',
@@ -257,7 +356,26 @@ exports.initiateKhaltiPayment = async (req, res) => {
     const { amount, name, email, phone } = req.body;
 
     if (!isValidAmount(amount)) {
-      return res.status(400).json({ message: 'Invalid amount' });
+      // 'Invalid amount' also covers an amount over the ceiling; say so, because a
+      // donor who typed too much zeroes needs to know it is a second transaction,
+      // not a typo.
+      return res.status(400).json(
+        Number(amount) > MAX_DONATION
+          ? { message: 'A single donation cannot be more than 50 lakh (50,00,000). Please send it as a second donation, one transaction of up to 50 lakh each.' }
+          : { message: 'Invalid amount' }
+      );
+    }
+
+const declared = declaredFields(req, Number(amount) >= DECLARED_INCOME_FROM);
+    if (!declared.ok) {
+      return res.status(400).json({
+        message: declaredError({
+          job: String(req.body?.employment || '').trim(),
+          business: String(req.body?.businessIncome || '').trim(),
+          photoGiven: !!String(req.body?.photo || '').trim(),
+          photoAccepted: !!declared.fields.photo,
+        })
+      });
     }
 
     const secretKey = process.env.KHALTI_SECRET_KEY;
@@ -275,12 +393,13 @@ exports.initiateKhaltiPayment = async (req, res) => {
     const purchaseOrderId = generateTransactionUuid('KHALTI');
     const amountPaisa = Math.round(Number(amount) * 100);
 
-    const donation = await Donation.create({
+const donation = await Donation.create({
       userId: req.user.id,
       name: name || req.user.name,
       email: email || req.user.email,
       phone: phone || req.user.phone,
       amount: Number(amount),
+      ...declared.fields,
       transactionId: purchaseOrderId,
       status: 'pending',
       paymentMethod: 'khalti',
@@ -422,7 +541,26 @@ exports.initiateIpsPayment = async (req, res) => {
     const { amount, name, email, phone } = req.body;
 
     if (!isValidAmount(amount)) {
-      return res.status(400).json({ message: 'Invalid amount' });
+      // 'Invalid amount' also covers an amount over the ceiling; say so, because a
+      // donor who typed too much zeroes needs to know it is a second transaction,
+      // not a typo.
+      return res.status(400).json(
+        Number(amount) > MAX_DONATION
+          ? { message: 'A single donation cannot be more than 50 lakh (50,00,000). Please send it as a second donation, one transaction of up to 50 lakh each.' }
+          : { message: 'Invalid amount' }
+      );
+    }
+
+const declared = declaredFields(req, Number(amount) >= DECLARED_INCOME_FROM);
+    if (!declared.ok) {
+      return res.status(400).json({
+        message: declaredError({
+          job: String(req.body?.employment || '').trim(),
+          business: String(req.body?.businessIncome || '').trim(),
+          photoGiven: !!String(req.body?.photo || '').trim(),
+          photoAccepted: !!declared.fields.photo,
+        })
+      });
     }
 
     const merchantId = process.env.IPS_MERCHANT_ID;
@@ -472,12 +610,13 @@ exports.initiateIpsPayment = async (req, res) => {
       console.error('IPS signing error:', error.message); return res.status(500).json({ message: 'This payment method is temporarily unavailable.' });
     }
 
-    const donation = await Donation.create({
+const donation = await Donation.create({
       userId: req.user.id,
       name: name || req.user.name,
       email: email || req.user.email,
       phone: phone || req.user.phone,
       amount: Number(amount),
+      ...declared.fields,
       transactionId: txnId,
       status: 'pending',
       paymentMethod: 'ips',

@@ -297,7 +297,7 @@ const logAdminActivity = (adminId, action, details = {}) => {
 
 const DEFAULT_ABOUT_TITLE = {
   en: 'Introduction to the Temple',
-  ne: 'श्री रामचन्द्र मन्दिरको परिचय',
+  ne: 'श्री रामचन्द्र मन्दिरको संक्षिप्त परिचय',
   hi: 'श्री रामचन्द्र मन्दिर का परिचय',
   zh: '什里·拉姆钱德拉神庙简介',
   ta: 'ஸ்ரீ ராமச்சந்திர கோயில் அறிமுகம்',

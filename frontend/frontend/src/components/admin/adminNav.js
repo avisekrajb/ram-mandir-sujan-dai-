@@ -1,6 +1,6 @@
 import {
   Activity, Bell, BellRing, BookOpen, Briefcase, CalendarDays, ClipboardList, Clock, Cloud, Database, Facebook, FileText,
-  Flame, Gift, History, Home, Image, Info, Landmark, LayoutDashboard, Mail, Megaphone, MonitorPlay, PanelBottom, PanelTop,
+  Flame, Gift, History, Home, Image, Info, Landmark, LayoutDashboard, Mail, Megaphone, MonitorPlay, PanelBottom, PanelTop, PenLine,
   Quote, Radio, ScrollText, Send, Settings, Share2, ShieldCheck, SlidersHorizontal, Star, Stamp, UserCog, Users,
   UsersRound,
 } from 'lucide-react';
@@ -47,6 +47,10 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
         { key: 'bookings', label: t.manageBooking || 'Bookings', icon: ClipboardList },
         // Public bookings from the Events page, with the price list (area: bookings).
         { key: 'bookings/manage', label: t.tb_navLabel || 'Booking management', icon: CalendarDays },
+        // The wording of the booking page itself (area: bookings, same as the list).
+        // PenLine, not FileText: that icon already belongs to the Content section
+        // and every sidebar item is meant to have an icon of its own.
+        { key: 'booking-content', label: t.a1_bpcNavLabel || 'Booking Page Content', icon: PenLine },
         { key: 'donations', label: t.manageDonate || 'Donations', icon: Gift },
         // Super admin only: payment features, QR and account numbers.
         ...(isSuperAdmin ? [{ key: 'account', label: t.donationAccount || 'Donation Account', icon: Landmark }] : []),

@@ -32,6 +32,7 @@ import AdminEvents from '../components/admin/AdminEvents';
 import AdminGallery from '../components/admin/AdminGallery';
 import AdminDonations from '../components/admin/AdminDonations';
 import AdminBookings from '../components/admin/AdminBookings';
+import AdminBookingContent from '../components/admin/AdminBookingContent';
 import AdminTempleBookings from '../components/admin/AdminTempleBookings';
 import AdminNotice from '../components/admin/AdminNotice';
 import AdminDailyAarti from '../components/admin/AdminDailyAarti';
@@ -456,6 +457,8 @@ const blocked = (pageArea && !hasArea(user, pageArea)) || (superOnlyPage && !isS
               bookings={bookings} setBookings={setBookings} t={t}
             />} />
             <Route path="bookings/manage" element={<AdminTempleBookings />} />
+                {/* The wording of the booking page itself (heading, labels, buttons, messages). */}
+                <Route path="booking-content" element={<AdminBookingContent t={t} />} />
 
             {/* Notice & Blogs */}
             <Route path="notice" element={<AdminNotice 

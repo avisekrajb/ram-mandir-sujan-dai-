@@ -160,11 +160,21 @@ function AboutSection({ section, index }) {
       className={`grid md:grid-cols-2 gap-12 items-center ${!isEven ? "md:[&>*:first-child]:order-2" : ""}`}
     >
       <div className="rounded-xl overflow-hidden shadow-lg">
+        {/*
+          The photo is shown whole rather than cropped to a fixed height. A
+          `h-80 object-cover` box trims the top and the bottom of every photo
+          whose shape is not exactly that ratio, so a portrait shot lost its
+          head and a wide one lost its sides — the picture looked broken rather
+          than framed. `h-auto` lets each one keep its own proportions, and the
+          grid's `items-center` keeps the shorter column centred instead of
+          stretching it.
+        */}
         <img
           src={optimizeImageCached(section.image, { width: 960 }) || defaultImages[index % defaultImages.length]}
           alt={titleText}
           loading="lazy"
-          className="w-full h-80 object-cover"
+          decoding="async"
+          className="block w-full h-auto"
             onError={(e) => { handleImageError(e, defaultImages[index % defaultImages.length]); }}
         />
       </div>
