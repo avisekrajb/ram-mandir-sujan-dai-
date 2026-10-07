@@ -16,6 +16,14 @@ import { areaForPage, hasArea, isSuperAdminOnlyPage } from '../../utils/permissi
  * super administrator took away are left out (the area of each page lives in
  * utils/permissions.js, next to the server's matching rule).
  */
+/**
+ * The order the sidebar sections appear in, and therefore the order of the pages
+ * inside them: Overview first, then each category in turn. Written out rather than
+ * left to the order of the array below, so a section that is edited or inserted
+ * later cannot quietly move the whole panel around. Anything not listed sorts last.
+ */
+const SECTION_ORDER = ['main', 'content', 'management', 'accounts', 'settings'];
+
 export const getAdminSections = (t, isSuperAdmin, user) => {
   const sections = [
     {
@@ -99,7 +107,18 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
   if (!user) return sections;
   return sections
     .map((s) => ({ ...s, items: s.items.filter((i) => hasArea(user, areaForPage(i.key))) }))
-    .filter((s) => s.items.length > 0);
+    .filter((s) => s.items.length > 0)
+    // Ranked by SECTION_ORDER, so Overview stays first whatever happens above.
+    .map((s, i) => ({ s, i }))
+    .sort((a, b) => {
+      const ra = SECTION_ORDER.indexOf(a.s.id);
+      const rb = SECTION_ORDER.indexOf(b.s.id);
+      if (ra !== -1 && rb !== -1) return ra - rb;
+      if (ra !== -1) return -1;
+      if (rb !== -1) return 1;
+      return a.i - b.i;
+    })
+    .map(({ s }) => s);
 };
 
 // Pages reachable from the top bar rather than the sidebar.
