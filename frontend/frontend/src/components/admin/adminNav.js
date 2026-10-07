@@ -28,7 +28,8 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
   const sections = [
     {
       id: 'main',
-      flat: true,
+      label: t.k7_navOverview || 'Overview',
+      icon: LayoutDashboard,
       items: [{ key: 'overview', label: t.overview || 'Overview', icon: LayoutDashboard }],
     },
     {

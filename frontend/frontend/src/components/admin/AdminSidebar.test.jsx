@@ -48,32 +48,67 @@ describe('admin navigation order', () => {
 });
 
 describe('AdminSidebar glass panel', () => {
-  test('renders every section heading in canonical order', () => {
+  test('renders all five group headings in canonical order', () => {
     render();
     const headings = [...container.querySelectorAll('nav button[aria-expanded]')].map((b) => b.textContent.trim());
-    expect(headings).toEqual(['Content', 'Management', 'Accounts', 'Settings']);
-    // Overview sits above them, with no group heading of its own.
-    expect(container.textContent).toContain('Overview');
-    expect(headings).not.toContain('Overview');
+    // Overview used to be a bare button with no heading; it now matches the rest.
+    expect(headings).toEqual(['Overview', 'Content', 'Management', 'Accounts', 'Settings']);
   });
 
-  test('carries the red-brown glass layers and the 3s sheen', () => {
+  test('the title and every heading are red-brown and bold', () => {
     render();
     const aside = container.querySelector('aside');
-    expect(aside.className).toContain('backdrop-blur-xl');
-    expect(aside.className).toContain('admin-sidebar');
-    expect(container.querySelector('.admin-sidebar-sheen')).not.toBeNull();
+    const title = [...aside.querySelectorAll('p')].find((p) => /Admin Dashboard/.test(p.textContent));
+    expect(title.className).toContain('text-maroon');
+    expect(title.className).toContain('font-bold');
 
+    const headings = [...container.querySelectorAll('nav button[aria-expanded]')];
+    expect(headings).toHaveLength(5);
+    headings.forEach((h) => {
+      expect(h.className).toContain('text-maroon');
+      expect(h.className).toContain('font-bold');
+    });
+  });
+
+  test('the panel is plain light - the colour is the flame, not a background', () => {
+    render();
+    const aside = container.querySelector('aside');
+    // No tint, no gradient, no glass: red-brown text needs a plain light panel.
+    expect(aside.className).toContain('bg-white');
+    expect(aside.className).not.toContain('gradient');
+    expect(aside.className).not.toContain('maroon');
+    expect(aside.className).not.toContain('5C0F0C');
+    // The old invented "glass sheen" layer is gone.
+    expect(container.querySelector('.admin-sidebar-sheen')).toBeNull();
+  });
+
+  test('every page button carries the gas-flame glow', () => {
+    render();
+    const links = [...container.querySelectorAll('nav a')];
+    expect(links.length).toBeGreaterThan(5);
+    links.forEach((a) => expect(a.className).toContain('admin-flame'));
+  });
+
+  test('the flame runs blue to amber on a 3s loop and honours reduced motion', () => {
+    render();
     const css = [...container.querySelectorAll('style')].map((s) => s.textContent).join('\n');
-    expect(css).toContain('adminSidebarSheen 3s');
-    // The motion has to stop for anyone who asked for less of it.
+    // Gas burner: blue cone, cyan, amber, yellow tip.
+    expect(css).toContain('rgba(37, 99, 235, 0.55)');
+    expect(css).toContain('rgba(245, 158, 11, 0.50)');
+    expect(css).toContain('rgba(251, 191, 36, 0.42)');
+    expect(css).toContain('adminFlame 3s');
+    // Behind the label, not over it.
+    expect(css).toMatch(/\.admin-flame \{ isolation: isolate; \}/);
     expect(css).toContain('prefers-reduced-motion: reduce');
+  });
+
+  test('is the plain panel, with no leftover red-brown or glass styling', () => {
+    render();
+    expect(container.querySelector('aside').className).toContain('admin-sidebar');
   });
 
   test('the first page shown is Overview', () => {
     render();
-    const firstLink = container.querySelector('nav a[href="/admin/overview"]');
-    expect(firstLink).not.toBeNull();
     const labels = [...container.querySelectorAll('nav a')].map((a) => a.getAttribute('href'));
     expect(labels[0]).toBe('/admin/overview');
   });

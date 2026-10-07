@@ -8,6 +8,9 @@ const strings = {
   en: {},
   ne: {
     // Navigation / areas
+    // The heading above the Overview page in the sidebar. It used to be a bare
+    // button with no heading; it now matches the other four groups.
+    k7_navOverview: 'सारांश',
     k7_navAccounts: 'खाताहरू',
     k7_adminsAccess: 'प्रशासक र पहुँच',
     k7_auditLog: 'अडिट लग',
