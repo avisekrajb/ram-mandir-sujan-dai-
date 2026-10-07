@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import SectionTitle from '../common/SectionTitle';
-import { handleImageError } from '../../utils/imageFallback';
 import { optimizeImageCached } from '../../utils/imageOptimize';
 
 /**

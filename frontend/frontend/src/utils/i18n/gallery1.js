@@ -1,4 +1,4 @@
-﻿// Gallery page and Admin → Gallery details (prefix gl_). Merged in ./index.js; a missing
+// Gallery page and Admin → Gallery details (prefix gl_). Merged in ./index.js; a missing
 // language falls back to English. {n}, {size} and {name} are replaced at runtime.
 const strings = {
   en: {

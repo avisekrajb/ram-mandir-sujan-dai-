@@ -6,7 +6,8 @@ import AdminSidebar from './AdminSidebar';
 import { getAdminSections, getAdminPages } from './adminNav';
 
 jest.mock('../../context/ToastContext', () => ({ useToast: () => ({ showToast: jest.fn() }) }));
-jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { role: 'superadmin', areas: {} }, logout: jest.fn() }) }));
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { role: 'superadmin', permissions: [] }, logout: jest.fn() }) }));
+jest.mock('../../context/LanguageContext', () => ({ useLanguage: () => ({ t: {}, lang: 'en' }) }));
 jest.mock('../../hooks/useSiteSettings', () => () => ({ logo: {} }));
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -39,11 +40,14 @@ describe('admin navigation order', () => {
     expect(getAdminPages(t, true, null)[0].key).toBe('overview');
   });
 
-  test('the order survives a user who may open only some areas', () => {
-    const narrow = { role: 'staff', areas: { content: true } };
+  test('the order survives an admin who may open only some areas', () => {
+    // A restricted admin is role 'admin' with a `permissions` list (see hasArea).
+    const narrow = { role: 'admin', permissions: ['content'] };
     const ids = getAdminSections(t, false, narrow).map((s) => s.id);
-    // Only the sections they may open, still in the canonical order.
-    expect(ids).toEqual(['content', 'settings']);
+    // Overview, Accounts and Settings have no area of their own, so they stay.
+    // "management" is the only thing this admin loses - and what is left is still
+    // in the canonical order.
+    expect(ids).toEqual(['main', 'content', 'accounts', 'settings']);
   });
 });
 

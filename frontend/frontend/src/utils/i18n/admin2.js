@@ -1,4 +1,4 @@
-﻿// Admin UI strings (part of the admin translation set). Keys are prefixed per
+// Admin UI strings (part of the admin translation set). Keys are prefixed per
 // area to avoid collisions with utils/translations.js; components read them via
 // `t.key || 'English fallback'`.
 const strings = {
