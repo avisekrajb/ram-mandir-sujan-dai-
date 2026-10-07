@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Published content for the temple ("श्रीरामचन्द्रमन्दिर").
  *
  * Where each block lives:
@@ -339,17 +339,11 @@ const PARAGRAPH_EN = {
 
   'मन्दिरमा अन्नकूट/गोवर्धन पूजा आयोजना हुँदै आएको छ।': 'Annakuta / Govardhan puja is regularly held at the temple.',
   'मन्दिरमा राम–सीता विवाह महोत्सव अर्थात् विवाह पञ्चमी आयोजना हुँदै आएको छ।': 'The Ram–Sita wedding festival, known as Vivah Panchami, is held at the temple.',
-  'मन्दिरमा योग तथा ध्यानसम्बन्धी गतिविधिहरू सञ्चालन हुँदै आएका छन्।': 'Yoga and meditation activities are regularly conducted at the temple.',
 
   'मन्दिरमा विवाह, उपनयन/व्रतबन्ध, पास्नी, इन्गेजमेन्ट, जन्मदिन तथा वार्षिकोत्सव लगायतका सामाजिक कार्यक्रमहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।': 'Social programs including weddings, upanayana and bratabandha, pashni, engagement, birthdays and anniversaries can be organised at the temple.',
   'मन्दिरमा विवाह, व्रतबन्ध, चौरासी पूजा, जन्मदिन तथा वार्षिकोत्सव लगायतका धार्मिक तथा सामाजिक कार्यक्रमबाट शुल्क तथा सहयोग प्राप्त हुने व्यवस्था रहेको छ।': 'Fees and support are received from religious and social programs including weddings, bratabandha, Chaurasi puja, birthdays and anniversaries.',
 
-  'मन्दिर परिसरमा सेमिनार तथा बैठकहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।': 'Seminars and meetings can be organised in the temple premises.',
-  'मन्दिर परिसरमा फिल्म तथा म्युजिक भिडियो छायांकनका लागि पनि प्रयोग हुँदै आएको छ।': 'The temple premises are also used for film and music video shooting.',
-
-  'मन्दिर परिसरमा शाकाहारी भोजन मात्र स्वीकार गरिन्छ।': 'Only vegetarian food is accepted within the temple premises.',
-  'मन्दिरमा शाकाहारी खानपानको व्यवस्था रहेको छ।': 'Vegetarian food is provided at the temple.',
-  'मदिरा, मासु तथा विदेशी संगीत प्रयोग गर्न निषेध गरिएको उल्लेख छ।': 'Alcohol, meat and foreign music are prohibited.',
+'मन्दिर परिसरमा सेमिनार तथा बैठकहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।': 'Seminars and meetings can be organised in the temple premises.',
 
   // 04 — Sadhana–Sandhya
   'यस कार्यक्रममा नेपालका ख्यातिप्राप्त भक्तिगायक तथा शास्त्रीय सङ्गीतज्ञहरूबाट कार्यक्रम सञ्चालन गरिन्छ।': 'The program is conducted by Nepal’s renowned devotional singers and classical musicians.',
@@ -366,304 +360,20 @@ const PARAGRAPH_EN = {
   'बालबालिकामा सकारात्मक परिणाम तथा आध्यात्मिक मार्गमा प्रेरणा दिलाइन्छ।': 'It instils positive outcomes in children and inspires them on the spiritual path.',
   'सर्वोत्कृष्ट जीवन शाश्वत चिन्तन (साँचो जीवननिर्माण अभियान) अन्तर्गत यो कार्यक्रम सञ्चालन गरिएको छ।': 'The program is run under the “Best Life, Everlasting Thoughts” (Sach Jeevan Nirman Abhiyan) campaign.',
   'श्रीचिन्मय आध्यात्मिक सेवा संघको विगतमा यस कार्यक्रमलाई सहयोग प्राप्त भएको छ।': 'The program has received support from the Shri Chinmaya Spiritual Service Association in the past.',
-
-  '२०८० साल माघ ८ गते अर्थात् जनवरी २२, २०२४ मा अयोध्यामा श्रीरामको मूर्ति प्राणप्रतिष्ठा भएको अवसरमा मन्दिरमा विशेष पूजा तथा कार्यक्रम गरिएको उल्लेख छ।': 'A special puja and program was held at the temple on the occasion of the pratishtha of Shri Ram’s idol in Ayodhya on 8 Magh 2080 BS, that is 22 January 2024.',
 };
 
-const DEFAULT_EVENTS = [
-  {
-    seedKey: 'daily-puja-aarti',
-    seedVersion: 2,
-    date: '2026-10-01',
-    photo: '/1.jpg',
-    upcoming: true,
-    order: 1,
-    yearText: '',
-    period: L('दैनिक', 'Daily'),
-    title: L('दैनिक पूजा तथा आरती', 'Daily Puja and Aarti'),
-    desc: L(
-      'मन्दिरमा दैनिक सेवा बिहान ५ बजेबाट सुरु हुन्छ। बिहान करिब ८:३० बजे स्नान तथा अभिषेक गरिन्छ र बिहान ९ बजे आरती तथा भोगको व्यवस्था हुन्छ। साँझको आरती गर्मीमा ६ बजे तथा जाडोमा ५:३० बजे हुने गर्दछ।',
-      'Daily worship at the temple begins at 5 AM. Around 8:30 AM the deity is bathed and anointed, and at 9 AM aarti and bhog are offered. The evening aarti is at 6 PM in summer and 5:30 PM in winter.'
-    ),
-    // The description already carries all four timings, so repeating them as
-    // paragraphs would print the same sentences twice.
-    paragraphs: P(),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'trirumanjan-special',
-    seedVersion: 2,
-    date: '2026-10-08',
-    photo: '/2.jpg',
-    upcoming: true,
-    order: 2,
-    yearText: '',
-    period: L('प्रत्येक संक्रान्ति तथा विभिन्न धार्मिक अवसर', 'Each Sankranti and religious occasion'),
-    title: L('त्रिरुमञ्जन तथा विशेष पूजा', 'Trirumanjan and Special Puja'),
-    desc: L(
-      'प्रत्येक संक्रान्तिमा त्रिरुमञ्जन विशेष पूजा तथा विभिन्न धार्मिक अवसरमा विशेष पूजा तथा अनुष्ठानहरू आयोजना गरिन्छ।',
-      'Trirumanjan special puja is held on every Sankranti, and special pujas and rituals are organised on various religious occasions.'
-    ),
-    // Both sentences were clauses of the description above.
-    paragraphs: P(),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'main-rituals',
-    seedVersion: 2,
-    date: '2026-10-15',
-    photo: '/3.jpg',
-    upcoming: true,
-    order: 3,
-    yearText: '',
-    period: L('नियमित तथा विशेष धार्मिक अवसर', 'Regular and special religious occasions'),
-    title: L('मुख्य धार्मिक अनुष्ठान', 'Main Religious Rituals'),
-    desc: L(
-      'मन्दिरमा विभिन्न धार्मिक तथा आध्यात्मिक अनुष्ठानहरू सञ्चालन गरिन्छ।',
-      'Various religious and spiritual rituals are performed at the temple.'
-    ),
-    paragraphs: P(
-      'रामनवमी अर्चना, भगवत् पूजा, अखण्ड रामायण पाठ तथा नवग्रह जप सञ्चालन गरिन्छ।',
-      'सत्यनारायण पूजा, त्रिरुमञ्जन तथा राम–सीता पूजा गरिन्छ।',
-      'हनुमान चालीसा, विष्णु सहस्रनाम तथा तुलसी अर्चना गरिन्छ।',
-      'बिहानको भोग, एकादशी व्रत तथा अर्पण र आरती लगायतका धार्मिक गतिविधिहरू सञ्चालन गरिन्छ।'
-    ),
-    // The bullet list restated these four paragraphs word for word, so only
-    // the prose is kept and printed once.
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'sadhana-sandhya',
-    seedVersion: 2,
-    date: '2026-10-22',
-    photo: '/4.jpg',
-    upcoming: true,
-    order: 4,
-    // No year label: the program was suspended 2076–2079 and resumed in 2080,
-    // so a single "2076–2080" range would misrepresent it.
-    yearText: '',
-    period: L('प्रत्येक अमावस्या', 'Every Amavasya'),
-    title: L('साधना–सन्ध्या', 'Sadhana–Sandhya'),
-    desc: L(
-      'अमावस्याका दिनहरूमा साँझ ४ बजेदेखि ७ बजेसम्म साधना–सन्ध्या कार्यक्रम सञ्चालन हुँदै आएको छ, जसमा भक्तिगीत तथा शास्त्रीय संगीत प्रस्तुत गरिन्छ।',
-      'Sadhana–Sandhya is held from 4 PM to 7 PM on Amavasya nights, featuring devotional songs and classical music.'
-    ),
-    paragraphs: P(
-      'यस कार्यक्रममा नेपालका ख्यातिप्राप्त भक्तिगायक तथा शास्त्रीय सङ्गीतज्ञहरूबाट कार्यक्रम सञ्चालन गरिन्छ।',
-      'श्रीरामचन्द्रमन्दिर जीर्णोद्धार एवं संवर्द्धन समिति तथा श्रीराममन्दिर निजी गुठीको सहयोगमा कार्यक्रम आयोजना गरिन्छ।',
-      'त्रिभुवन विश्वविद्यालयअन्तर्गत नेपाल ललितकला क्याम्पसको सहभागिता रहेको छ।',
-      'नयाँ तथा पुराना प्रतिभावान गायक–गायिका एवं कलाकारहरूलाई पनि साझा मञ्चमा अवसर दिइन्छ।',
-      'काठमाडौँ उपत्यकाको सांस्कृतिक मञ्चमा कार्यक्रमको स्थान रहेको छ।',
-      'हरेक औँसीमा शुभेच्छुकहरूको व्यापक सहभागिता रहेको छ।',
-      'कोभिड–१९ को प्रभावले वि.सं. २०७६ देखि २०७९ सम्म यो कार्यक्रम सञ्चालनमा कठिनाइ भयो। तर, वि.सं. २०८० देखि पुनर्जागृत गरिएको यो कार्यक्रम त्रिभुवन विश्वविद्यालयअन्तर्गत नेपाल ललितकला क्याम्पसको सहभागिताले झन् आकर्षक बनेको छ।'
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'bal-bibhar',
-    seedVersion: 2,
-    date: '2026-10-29',
-    photo: '/5.jpg',
-    upcoming: true,
-    order: 5,
-    yearText: '',
-    period: L('प्रत्येक शनिबार', 'Every Saturday'),
-    title: L('बालविहार कार्यक्रम', 'Bal Bibhar Program'),
-    desc: L(
-      'बालबालिका तथा किशोरकिशोरीका लागि प्रत्येक शनिबार साँझ ४ बजेदेखि ५ बजेसम्म बालविहार कार्यक्रम सञ्चालन गरिन्छ।',
-      'Bal Bibhar is held for children and teenagers every Saturday from 4 PM to 5 PM.'
-    ),
-    paragraphs: P(
-      'यस कार्यक्रममा ६ देखि १६ वर्ष उमेर समूहका बालबालिका तथा किशोरकिशोरी सहभागी हुने व्यवस्था रहेको छ।',
-      'कार्यक्रममा धर्म-संस्कृति र संस्कारको जानकारी तथा शिक्षा–दीक्षा सम्बन्धी विस्तृत जानकारी दिइन्छ।',
-      'बालबालिकामा सकारात्मक परिणाम तथा आध्यात्मिक मार्गमा प्रेरणा दिलाइन्छ।',
-      'सर्वोत्कृष्ट जीवन शाश्वत चिन्तन (साँचो जीवननिर्माण अभियान) अन्तर्गत यो कार्यक्रम सञ्चालन गरिएको छ।',
-      'श्रीचिन्मय आध्यात्मिक सेवा संघको विगतमा यस कार्यक्रमलाई सहयोग प्राप्त भएको छ।'
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'ramnavami-program',
-    seedVersion: 2,
-    date: '2026-11-05',
-    photo: '/6.jpg',
-    upcoming: true,
-    order: 6,
-    yearText: '',
-    period: L('रामनवमी', 'Ram Navami'),
-    title: L('रामनवमी विशेष कार्यक्रम', 'Ram Navami Special Program'),
-    desc: L(
-      'रामनवमीका अवसरमा धार्मिक तथा सांगीतिक कार्यक्रमहरू आयोजना गरिन्छ।',
-      'Religious and cultural programs are organised on the occasion of Ram Navami.'
-    ),
-    // The two sentences below were rewrites of the description above.
-    paragraphs: P(),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'annakuta-govardhan',
-    seedVersion: 2,
-    date: '2026-11-12',
-    photo: '/7.jpg',
-    upcoming: true,
-    order: 7,
-    yearText: '',
-    period: L('धार्मिक पर्व', 'Religious festival'),
-    title: L('अन्नकूट तथा गोवर्धन पूजा', 'Annakuta and Govardhan Puja'),
-    desc: L(
-      'मन्दिरमा अन्नकूट/गोवर्धन पूजा आयोजना हुँदै आएको छ।',
-      'Annakuta / Govardhan puja is regularly held at the temple.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'ram-sita-wedding',
-    seedVersion: 2,
-    date: '2026-11-19',
-    photo: '/8.jpg',
-    upcoming: true,
-    order: 8,
-    yearText: '',
-    period: L('विवाह पञ्चमी', 'Vivah Panchami'),
-    title: L('राम–सीता विवाह महोत्सव', 'Ram–Sita Wedding Festival'),
-    desc: L(
-      'मन्दिरमा राम–सीता विवाह महोत्सव अर्थात् विवाह पञ्चमी आयोजना हुँदै आएको छ।',
-      'The Ram–Sita wedding festival, known as Vivah Panchami, is held at the temple.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'yoga-dhyana',
-    seedVersion: 2,
-    date: '2026-11-26',
-    photo: '/9.jpg',
-    upcoming: true,
-    order: 9,
-    yearText: '',
-    period: L('धार्मिक तथा आध्यात्मिक गतिविधि', 'Religious and spiritual activity'),
-    title: L('योग तथा ध्यान', 'Yoga and Meditation'),
-    desc: L(
-      'मन्दिरमा योग तथा ध्यानसम्बन्धी गतिविधिहरू सञ्चालन हुँदै आएका छन्।',
-      'Yoga and meditation activities are regularly conducted at the temple.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'religious-social-programs',
-    seedVersion: 2,
-    date: '2026-12-03',
-    photo: '/10.jpg',
-    upcoming: true,
-    order: 10,
-    yearText: '',
-    period: L('धार्मिक तथा सामाजिक कार्यक्रम', 'Religious and social programs'),
-    title: L('धार्मिक तथा सामाजिक कार्यक्रम', 'Religious and Social Programs'),
-    desc: L(
-      'मन्दिर परिसरमा विभिन्न धार्मिक तथा सामाजिक कार्यक्रमहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।',
-      'Various religious and social programs can be organised in the temple premises.'
-    ),
-    paragraphs: P(
-      'मन्दिरमा विवाह, उपनयन/व्रतबन्ध, पास्नी, इन्गेजमेन्ट, जन्मदिन तथा वार्षिकोत्सव लगायतका सामाजिक कार्यक्रमहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।',
-      'मन्दिरमा विवाह, व्रतबन्ध, चौरासी पूजा, जन्मदिन तथा वार्षिकोत्सव लगायतका धार्मिक तथा सामाजिक कार्यक्रमबाट शुल्क तथा सहयोग प्राप्त हुने व्यवस्था रहेको छ।'
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'seminar-meeting',
-    seedVersion: 2,
-    date: '2026-12-10',
-    photo: '/11.jpg',
-    upcoming: true,
-    order: 11,
-    yearText: '',
-    period: L('कार्यक्रम तथा गतिविधि', 'Programs and activities'),
-    title: L('सेमिनार तथा बैठक', 'Seminar and Meeting'),
-    desc: L(
-      'मन्दिर परिसरमा सेमिनार तथा बैठकहरू आयोजना गर्न सकिने व्यवस्था रहेको छ।',
-      'Seminars and meetings can be organised in the temple premises.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'film-music-shooting',
-    seedVersion: 2,
-    date: '2026-12-17',
-    photo: '/12.jpg',
-    upcoming: true,
-    order: 12,
-    yearText: '',
-    period: L('सांस्कृतिक तथा सिर्जनात्मक गतिविधि', 'Cultural and creative activity'),
-    title: L('फिल्म तथा म्युजिक भिडियो छायांकन', 'Film and Music Video Shooting'),
-    desc: L(
-      'मन्दिर परिसरमा फिल्म तथा म्युजिक भिडियो छायांकनका लागि पनि प्रयोग हुँदै आएको छ।',
-      'The temple premises are also used for film and music video shooting.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'vegetarian-food',
-    seedVersion: 2,
-    date: '2026-12-24',
-    photo: '/13.jpg',
-    upcoming: true,
-    order: 13,
-    yearText: '',
-    period: L('मन्दिर परिसरको व्यवस्था', 'Arrangement in the temple premises'),
-    title: L('शाकाहारी खानपान', 'Vegetarian Food'),
-    desc: L(
-      'मन्दिरमा शाकाहारी खानपानको व्यवस्था रहेको छ।',
-      'Vegetarian food is provided at the temple.'
-    ),
-    // the middle sentence repeated the description word for word
-    paragraphs: P(
-      'मन्दिर परिसरमा शाकाहारी भोजन मात्र स्वीकार गरिन्छ।',
-      'मदिरा, मासु तथा विदेशी संगीत प्रयोग गर्न निषेध गरिएको उल्लेख छ।'
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-  {
-    seedKey: 'ayodhya-pranpratistha',
-    seedVersion: 2,
-    date: '2026-12-31',
-    photo: '/14.jpg',
-    upcoming: true,
-    order: 14,
-    yearText: '२०८०',
-    period: L('वि.सं. २०८० माघ ८ / जनवरी २२, २०२४', '8 Magh 2080 BS / 22 January 2024'),
-    title: L('अयोध्या राममूर्ति प्राणप्रतिष्ठा अवसरको विशेष पूजा', 'Special Puja on the Ayodhya Ram Pratishtha Occasion'),
-    desc: L(
-      '२०८० साल माघ ८ गते अर्थात् जनवरी २२, २०२४ मा अयोध्यामा श्रीरामको मूर्ति प्राणप्रतिष्ठा भएको अवसरमा मन्दिरमा विशेष पूजा तथा कार्यक्रम गरिएको उल्लेख छ।',
-      'A special puja and program was held at the temple on the occasion of the pratishtha of Shri Ram’s idol in Ayodhya on 8 Magh 2080 BS, that is 22 January 2024.'
-    ),
-    paragraphs: P(
-    ),
-    listTitle: L('', ''),
-    points: [],
-  },
-];
+/*
+ * The standing programs used to be seeded as events here, so each one was a
+ * dated row with a photo, a description and a few bullet points. They are now
+ * published as the numbered sections of the events page instead - see
+ * data/templePrograms.js - because a program like "बालविहार" is not an event on
+ * a date, and the section form can hold the tables the old rows could not.
+ *
+ * Kept empty on purpose. Events themselves are still created, ordered and placed
+ * on the home page from Admin -> Events; ensureSeedEvents() retires any row left
+ * over from the old seeds.
+ */
+const DEFAULT_EVENTS = [];
 
 // Attach the English translation to every seeded paragraph.
 for (const ev of DEFAULT_EVENTS) {

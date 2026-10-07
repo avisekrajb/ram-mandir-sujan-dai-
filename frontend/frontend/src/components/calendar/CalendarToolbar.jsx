@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Bell, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 
 const CALENDARS = [
   { id: 'bs', labelKey: 'bsCalendar', fallback: 'Bikram Sambat' },
@@ -38,7 +38,6 @@ const CalendarToolbar = ({
   onToday,
   reminderCount,
   onReminders,
-  onExport,
   canPrev,
   canNext,
 }) => (
@@ -110,10 +109,6 @@ const CalendarToolbar = ({
           </button>
         ))}
       </div>
-
-      <button type="button" onClick={onExport} title={t.cal_exportMonth} aria-label={t.cal_exportMonth || 'Add this month to my calendar'} className={iconBtn}>
-        <CalendarPlus size={18} />
-      </button>
 
       <button
         type="button"

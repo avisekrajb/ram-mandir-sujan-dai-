@@ -25,7 +25,6 @@ import {
   TITHI_NAMES,
   templeTitle,
 } from '../utils/calendarData';
-import { buildIcs, downloadIcs } from '../utils/ics';
 import { formatDate } from '../utils/formatDate';
 import useReminders, { reminderKey } from '../hooks/useReminders';
 import PageHeader from '../components/common/PageHeader';
@@ -562,33 +561,6 @@ const CalendarPage = () => {
 
   const upcomingCount = reminders.list.filter((r) => r.eventDate >= todayKey).length;
 
-  /* ----- add the month to a phone / Google / Outlook calendar ----- */
-  const exportMonth = () => {
-    if (!month) return;
-    const items = [];
-    month.cells.forEach(({ key, day }) => {
-      day.events.forEach((e, i) => {
-        items.push({ uid: `${key}-e${i}`, key, title: e.en || e.np, description: e.isHoliday ? 'Public holiday' : '' });
-      });
-      day.temple.forEach((tp, i) => {
-        items.push({
-          uid: `${key}-t${i}`,
-          key,
-          title: tp.title.en || tp.title.ne,
-          description: 'Shree Ramchandra Temple programme',
-        });
-      });
-    });
-    if (!items.length) {
-      showToast(t.noFestivals || 'No festivals or holidays in this month.', 'info');
-      return;
-    }
-    downloadIcs(
-      `temple-calendar-${month.firstKey.slice(0, 7)}.ics`,
-      buildIcs(items, { calName: 'Shree Ramchandra Temple Calendar' })
-    );
-  };
-
   const yearOptions = useMemo(
     () =>
       range(...yearBounds).map((y) => ({
@@ -629,7 +601,6 @@ const CalendarPage = () => {
               canNext={canNext}
               reminderCount={upcomingCount}
               onReminders={() => setMyOpen(true)}
-              onExport={exportMonth}
             />
 
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" role="group" aria-label="Filter">

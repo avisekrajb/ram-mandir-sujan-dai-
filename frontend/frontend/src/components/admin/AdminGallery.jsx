@@ -6,13 +6,16 @@ import { formatDate as formatLocaleDate } from '../../utils/formatDate';
 import OmLoader from '../../components/common/OmLoader';
 import { localized } from '../gallery/galleryText';
 import { isGenericTitle } from '../../utils/galleryPlaceholders';
-import { GalleryUploadModal, GalleryEditModal, hasDetails } from './GalleryForms';
+import { GalleryUploadModal, GalleryEditModal, GalleryBulkUploadModal, hasDetails, BULK_MAX } from './GalleryForms';
 import {
-  Image, Video, Plus, Trash2, Download, Share2,
+  Image, Images, Video, Plus, Trash2, Download, Share2,
   Calendar, Search,
   CheckSquare, Square, RefreshCw,
   ChevronLeft, ChevronRight, Star, Pencil, AlertCircle
 } from 'lucide-react';
+
+// {n}-style placeholders come from the translation files.
+const fill = (text, values) => String(text).replace(/\{(\w+)\}/g, (whole, key) => (values[key] !== undefined ? values[key] : whole));
 
 const AdminGallery = ({ gallery, setGallery, galleryVideos, setGalleryVideos, t }) => {
   const { showToast } = useToast();
@@ -23,6 +26,7 @@ const AdminGallery = ({ gallery, setGallery, galleryVideos, setGalleryVideos, t 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedItems, setSelectedItems] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [onlyMissing, setOnlyMissing] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
@@ -270,6 +274,13 @@ const AdminGallery = ({ gallery, setGallery, galleryVideos, setGalleryVideos, t 
             title={t.a2_galleryRefresh || 'Refresh'}
           >
             <RefreshCw size={18} className="text-ink-soft" />
+          </button>
+          <button
+            onClick={() => setShowBulkModal(true)}
+            title={t.gl_bulkHeading || `Add up to ${BULK_MAX} photos`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-vermilion px-4 py-2 text-sm font-semibold text-vermilion transition-all hover:bg-vermilion hover:text-white"
+          >
+            <Images size={16} /> {fill(t.gl_bulkButton || 'Add {max} photos', { max: BULK_MAX })}
           </button>
           <button
             onClick={() => setShowAddModal(true)}
@@ -642,6 +653,16 @@ const AdminGallery = ({ gallery, setGallery, galleryVideos, setGalleryVideos, t 
           t={t}
           onClose={() => setShowAddModal(false)}
           onUploaded={(newItem) => { setAllItems((prev) => [newItem, ...prev]); setShowAddModal(false); }}
+        />
+      )}
+      {showBulkModal && (
+        <GalleryBulkUploadModal
+          t={t}
+          onClose={() => setShowBulkModal(false)}
+          onUploaded={(newItems) => {
+            setAllItems((prev) => [...(Array.isArray(newItems) ? newItems : []), ...prev]);
+            setShowBulkModal(false);
+          }}
         />
       )}
       {editItem && (

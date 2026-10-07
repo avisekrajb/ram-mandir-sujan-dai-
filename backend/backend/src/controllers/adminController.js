@@ -13,6 +13,7 @@ const cloudinary = require('../config/cloudinary');
 const { sendTeamWelcomeEmail } = require('../services/emailService');
 const { clearLivePujaCache } = require('../services/livePujaService');
 const { PUJA_TYPES, DEFAULT_EVENTS_PAGE_TEXT } = require('../data/templeContent');
+const { DEFAULT_PROGRAM_SECTIONS } = require('../data/templePrograms');
 const { DEFAULT_HISTORY } = require('../data/templeHistory');
 const { DEFAULT_BOOKING_CONTENT } = require('../data/templeBooking');
 const { DONATE_PAGE_TITLE, DONATE_INTRO, DEFAULT_DONATE_CONTENT } = require('../data/templeDonate');
@@ -440,6 +441,14 @@ exports.getSettings = async (req, res) => {
       settings.eventsPageText = DEFAULT_EVENTS_PAGE_TEXT;
       await settings.save();
       console.log(`Settings: published ${DEFAULT_EVENTS_PAGE_TEXT.length} events page text row(s)`);
+    }
+
+    // Publish the "आयोजन गरिने कार्यक्रमहरू" sections once. Anything the admin has
+    // since added or edited in Admin -> Events is kept.
+    if (!settings.programSections || settings.programSections.length === 0) {
+      settings.programSections = DEFAULT_PROGRAM_SECTIONS;
+      await settings.save();
+      console.log(`Settings: published ${DEFAULT_PROGRAM_SECTIONS.length} program section(s)`);
     }
 
     /*
@@ -1936,6 +1945,111 @@ exports.addGalleryPhoto = async (req, res) => {
       success: false, 
       message: error.message || 'Server error' 
     });
+  }
+};
+
+/**
+ * Several photos in one request (Admin -> Gallery). One title, description and
+ * category are written once and applied to every file, unless the form sends a
+ * per-photo title, which wins for that file alone.
+ *
+ * Photos are added one after another rather than all at once: if one file is
+ * rejected the ones already stored stay, and the response says which file failed
+ * so the admin can retry just that one.
+ */
+exports.addGalleryPhotosBulk = async (req, res) => {
+  const files = Array.isArray(req.files) ? req.files : [];
+  const uploaded = [];
+
+  try {
+    if (files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No photos uploaded' });
+    }
+    if (files.length > GALLERY_BATCH_MAX) {
+      // multer already refuses the request, but the cap is repeated here so the
+      // rule holds for any caller that reaches this controller.
+      return res.status(400).json({ success: false, message: `Upload up to ${GALLERY_BATCH_MAX} photos at a time` });
+    }
+
+    let data = {};
+    try {
+      data = req.body.data ? JSON.parse(req.body.data) : {};
+    } catch (e) {
+      data = {};
+    }
+
+    const sharedTitle = toLocalized(data.title);
+    const sharedDescription = toLocalized(data.description);
+    const category = data.category || 'general';
+
+    // Optional per-file titles, keyed by the file name sent in the form.
+    const perFile = new Map();
+    if (Array.isArray(data.titles)) {
+      data.titles.forEach((row) => {
+        if (row && row.file && row.title) perFile.set(row.file, toLocalized(row.title));
+      });
+    }
+
+    if (!hasText(sharedTitle) && perFile.size === 0) {
+      for (const file of files) await discardUpload(file);
+      return res.status(400).json({ success: false, message: 'A title is required' });
+    }
+
+    const failed = [];
+    for (const file of files) {
+      const title = perFile.get(file.originalname) || sharedTitle;
+      if (!hasText(title)) {
+        // This one has no title of its own and no usable shared one: leave it out
+        // and say so, rather than publishing a photo with no title at all.
+        failed.push({ file: file.originalname, message: 'No title' });
+        await discardUpload(file);
+        continue;
+      }
+      try {
+        const item = await Gallery.create({
+          photo: file.path,
+          cap: title,
+          title,
+          description: sharedDescription,
+          type: 'photo',
+          hue: data.hue || '#7A1F2B',
+          category,
+        });
+        uploaded.push(item);
+      } catch (error) {
+        console.error(`Add gallery photo "${file.originalname}" error:`, error.message);
+        await discardUpload(file);
+        failed.push({ file: file.originalname, message: error.message || 'Server error' });
+      }
+    }
+
+    if (uploaded.length > 0) {
+      logAdminActivity(req.user.id, 'Gallery Photos Added', {
+        count: uploaded.length,
+        category,
+      });
+    }
+
+    if (uploaded.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'None of the photos could be added',
+        failed,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: uploaded,
+      count: uploaded.length,
+      failed,
+      message: `${uploaded.length} photo(s) added`,
+    });
+  } catch (error) {
+    // Nothing was stored before the failure, so nothing is left on Cloudinary.
+    for (const file of files) await discardUpload(file);
+    console.error('Add gallery photos bulk error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 };
 

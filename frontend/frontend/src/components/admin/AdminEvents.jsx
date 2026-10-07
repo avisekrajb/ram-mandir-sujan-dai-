@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import api from '../../services/api';
 import OmLoader from '../../components/common/OmLoader';
+import AdminProgramSections from './AdminProgramSections';
 
 // Render a translated sentence with a JSX node in place of its "{n}" placeholder.
 const withNode = (text, node) => {
@@ -31,6 +32,7 @@ const AdminEvents = ({ events, setEvents, t, settings, updateSettings }) => {
   const [showStats, setShowStats] = useState(false);
   const [filterUpcoming, setFilterUpcoming] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [tab, setTab] = useState('events');
   const fileInputRef = useRef(null);
 
   // /events page headings (AdminSettings.eventsPageText)
@@ -692,8 +694,42 @@ const AdminEvents = ({ events, setEvents, t, settings, updateSettings }) => {
     );
   }
 
+  // Festival cards (dated events) and the numbered program sections are two
+  // different things on the Events page, so they get a tab each here.
+  const tabBar = (
+    <div className="flex flex-wrap gap-1 border-b border-line" role="tablist">
+      {[
+        { id: 'events', label: t?.a2_eventsTabEvents || 'Festival cards & page text' },
+        { id: 'programs', label: t?.a2_progTitle || 'Program sections' },
+      ].map((x) => (
+        <button
+          key={x.id}
+          type="button"
+          role="tab"
+          aria-selected={tab === x.id}
+          onClick={() => setTab(x.id)}
+          className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+            tab === x.id ? 'border-brand-600 text-ink' : 'border-transparent text-mute hover:text-ink'
+          }`}
+        >
+          {x.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (tab === 'programs') {
+    return (
+      <div className="space-y-6">
+        {tabBar}
+        <AdminProgramSections settings={settings} updateSettings={updateSettings} t={t} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {tabBar}
       {/* Engagement Stats */}
       {engagementStats && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">

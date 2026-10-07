@@ -35,7 +35,7 @@ const AdminFooter = ({ settings, updateSettings, t }) => {
     showSupport: true,
     showMap: true,
     showSubscribe: true,
-    mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.245849736379!2d85.3221176!3d27.7170489!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb190c9f5c8d7b%3A0x4f8b3f8b3f8b3f8b!2sGaushala%2C%20Kathmandu%2044600!5e0!3m2!1sen!2snp!4v1700000000000',
+    mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.3389018929365!2d85.33819027525377!3d27.706820676182783!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb19761839ec2b%3A0xcc3f44bcaa9f2a2f!2sRam%20Mandir%2C%20Battisputali!5e0!3m2!1sen!2snp!4v1791343152626!5m2!1sen!2snp',
     socialLinks: {
       facebook: { enabled: true, url: 'https://facebook.com' },
       youtube: { enabled: true, url: 'https://youtube.com' },

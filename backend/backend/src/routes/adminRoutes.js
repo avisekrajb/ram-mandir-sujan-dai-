@@ -6,7 +6,7 @@ const requireSuperAdmin = require('../middleware/superadmin');
 const { requireArea, areaForAdminPath, requireSettingsAccess } = require('../middleware/permissions');
 // `bellUpload` is the multer middleware; the controller handler below shares its
 // name with the middleware export, so the middleware is aliased here.
-const { upload, uploadBellSound: bellUpload } = require('../middleware/upload');
+const { upload, uploadBellSound: bellUpload, uploadGalleryBatch, GALLERY_BATCH_MAX } = require('../middleware/upload');
 const donationAccounts = require('../controllers/donationAccountController');
 const rateLimit = require('../middleware/rateLimit');
 const accountCtrl = require('../controllers/accountController');
@@ -71,6 +71,7 @@ const {
   // Gallery
   getGallery,
   addGalleryPhoto,
+  addGalleryPhotosBulk,
   deleteGalleryPhoto,
   getGalleryVideos,
   addGalleryVideo,
@@ -379,6 +380,8 @@ router.delete('/team/:id', deleteTeam);
 
 // ---------- Gallery Management (Protected Admin Routes) ----------
 router.post('/gallery', upload.single('photo'), addGalleryPhoto);
+// Several photos in one request, for the "up to 6 at once" form in Admin -> Gallery.
+router.post('/gallery/bulk', uploadGalleryBatch.array('photos', GALLERY_BATCH_MAX), addGalleryPhotosBulk);
 router.post('/gallery/videos', addGalleryVideo);
 router.post('/gallery/video', upload.single('video'), addGalleryVideo);
 router.put('/gallery/:id', updateGalleryItem);

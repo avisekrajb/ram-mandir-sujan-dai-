@@ -36,6 +36,9 @@ export const emptyDetails = () => ({
   category: 'general',
 });
 
+/** How many photos one batch may carry. Mirrors GALLERY_BATCH_MAX on the server. */
+export const BULK_MAX = 6;
+
 /** Form values for an existing item. A real caption stands in for a missing title. */
 export const detailsFromItem = (item) => {
   const pick = (obj, l) => (obj && typeof obj[l] === 'string' ? obj[l] : '');
@@ -119,7 +122,7 @@ export function GalleryDetailsFields({ value, onChange, errors = {}, t, idPrefix
   );
 }
 
-function ModalShell({ title, onClose, busy, children }) {
+function ModalShell({ title, onClose, busy, children, wide }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' && !busy) onClose(); };
     document.addEventListener('keydown', onKey);
@@ -133,7 +136,7 @@ function ModalShell({ title, onClose, busy, children }) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6"
+        className={`max-h-[90dvh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6 ${wide ? 'max-w-2xl' : 'max-w-lg'}`}
       >
         <div className="mb-5 flex items-center justify-between gap-3">
           <h3 className="font-serif text-lg font-semibold text-ink">{title}</h3>
@@ -262,6 +265,343 @@ export function GalleryUploadModal({ t, onClose, onUploaded }) {
           <button type="submit" disabled={uploading} className="inline-flex items-center gap-2 rounded-lg bg-vermilion px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#820606] disabled:opacity-60">
             {uploading && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
             {uploading ? (t.uploading || 'Uploading...') : (t.gl_upload || 'Upload')}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+/**
+ * Upload up to six photos in one go (Admin -> Gallery).
+ *
+ * The title is written once and applied to every photo in the batch, which is the
+ * point: six pictures of the same ceremony get one title instead of six forms.
+ * Each row also has its own title box, pre-filled with that shared title, so a photo
+ * that needs a different caption can be given one without another round trip.
+ *
+ * Description and category are shared. Description may be left empty and added later
+ * with Edit, so a batch of quick photos is not held up by prose.
+ */
+export function GalleryBulkUploadModal({ t, onClose, onUploaded }) {
+  const { showToast } = useToast();
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+  const [details, setDetails] = useState(emptyDetails);
+  const [rows, setRows] = useState([]);
+  const [fileError, setFileError] = useState('');
+  const [titleError, setTitleError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [done, setDone] = useState(0);
+  const fileInput = useRef(null);
+
+  // Object URLs for the thumbnails, released when they are replaced or on close.
+  useEffect(() => {
+    const urls = files.map((f) => URL.createObjectURL(f));
+    setPreviews(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [files]);
+
+  // New photos start on the shared title, so a batch of one title is typed once.
+  useEffect(() => {
+    setRows(files.map((f) => ({ file: f.name, title: details.title.en || details.title.ne || '' })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the picked files change
+  }, [files]);
+
+  const sharedTitle = details.title.en || details.title.ne || '';
+  const remaining = BULK_MAX - files.length;
+
+  const chooseFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!picked.length) return;
+
+    const good = [];
+    for (const f of picked) {
+      if (!f.type.startsWith('image/')) continue;
+      if (f.size > MAX_IMAGE_MB * 1024 * 1024) continue;
+      good.push(f);
+    }
+    // Take what fits; anything over the cap is left for the next batch.
+    const accepted = good.slice(0, remaining);
+    const skipped = picked.length - accepted.length;
+    setFiles((prev) => [...prev, ...accepted].slice(0, BULK_MAX));
+    setFileError(
+      skipped > 0
+        ? fill(t.gl_bulkTooMany || 'You can upload up to {max} photos at a time. The rest were not added.', { max: BULK_MAX })
+        : ''
+    );
+  };
+
+  const removeAt = (i) => {
+    setFiles((prev) => prev.filter((_, x) => x !== i));
+    setRows((prev) => prev.filter((_, x) => x !== i));
+  };
+
+  const setRowTitle = (i, value) => setRows((prev) => prev.map((r, x) => (x === i ? { ...r, title: value } : r)));
+
+  const applySharedTitleToAll = () => {
+    setRows((prev) => prev.map((r) => ({ ...r, title: sharedTitle })));
+  };
+
+  const change = (next) => {
+    setDetails(next);
+    if (titleError) setTitleError('');
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!files.length) {
+      setFileError(t.gl_needFile || 'Choose a photo or a video.');
+      return;
+    }
+    // A photo is never published untitled: it falls back to the shared title, so a
+    // batch is only blocked when no photo at all would end up with a title.
+    const anyTitled = sharedTitle.trim() || rows.some((r) => r.title.trim());
+    if (!anyTitled) {
+      setTitleError(t.gl_bulkNeedTitle || 'Give the batch a title, or write one on a photo.');
+      return;
+    }
+    setTitleError('');
+
+    const form = new FormData();
+    files.forEach((f) => form.append('photos', f));
+    form.append(
+      'data',
+      JSON.stringify({
+        cap: details.title,
+        title: details.title,
+        description: details.description,
+        category: details.category,
+        hue: '#A80808',
+        // Per-photo titles are matched back to their file by name.
+        titles: rows.map((r) => ({ file: r.file, title: { en: r.title.trim() } })),
+      })
+    );
+
+    setUploading(true);
+    try {
+      const response = await api.post('/admin/gallery/bulk', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const added = response.data?.data || [];
+      const failed = response.data?.failed || [];
+      setDone(added.length);
+      if (failed.length) {
+        showToast(
+          fill(t.gl_bulkPartial || '{done} photo(s) added, {failed} could not be.', {
+            done: added.length,
+            failed: failed.length,
+          }),
+          'warning'
+        );
+      } else {
+        showToast(fill(t.gl_bulkDone || '{n} photo(s) added.', { n: added.length }), 'success');
+      }
+      onUploaded(added);
+    } catch (error) {
+      console.error('Bulk upload error:', error);
+      showToast(error.response?.data?.message || t.a2_uploadFailed || 'Upload failed', 'error');
+      setUploading(false);
+    }
+  };
+
+  return (
+    <ModalShell
+      title={t.gl_bulkHeading || `Add up to ${BULK_MAX} photos`}
+      onClose={onClose}
+      busy={uploading}
+      wide
+    >
+      <form onSubmit={submit} noValidate className="space-y-5">
+        {done > 0 && (
+          <p className="rounded-lg bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+            {fill(t.gl_bulkDone || '{n} photo(s) added.', { n: done })}
+          </p>
+        )}
+
+        {/* Pick */}
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-ink">
+              {t.gl_bulkPhotos || 'Photos'}{' '}
+              <span className="font-normal text-mute">
+                ({files.length}/{BULK_MAX})
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={uploading || remaining === 0}
+              className="text-sm font-semibold text-vermilion hover:underline disabled:opacity-50"
+            >
+              {remaining === 0
+                ? (t.gl_bulkFull || 'Batch is full')
+                : (t.gl_bulkAddMore || '+ Add more photos')}
+            </button>
+          </div>
+
+          {files.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="flex w-full flex-col items-center rounded-xl border-2 border-dashed border-gray-300 px-4 py-10 text-center transition-colors hover:border-vermilion"
+            >
+              <span className="mb-2 flex gap-2 text-mute">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <ImageIcon key={i} size={i === 0 ? 28 : 22} aria-hidden="true" />
+                ))}
+              </span>
+              <span className="text-sm font-semibold text-ink">
+                {fill(t.gl_bulkChoose || 'Choose up to {max} photos', { max: BULK_MAX })}
+              </span>
+              <span className="mt-1 text-xs text-mute">
+                {fill(t.gl_bulkChooseHint || 'JPG, PNG or WEBP, up to {size} MB each.', { size: MAX_IMAGE_MB })}
+              </span>
+            </button>
+          ) : (
+            <ul className="space-y-2">
+              {files.map((f, i) => (
+                <li key={`${f.name}-${f.size}`} className="flex items-center gap-3 rounded-xl border border-gray-200 p-2">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                    {previews[i] && <img src={previews[i]} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs text-mute" title={f.name}>{f.name}</p>
+                    <input
+                      type="text"
+                      value={rows[i] ? rows[i].title : ''}
+                      onChange={(e) => setRowTitle(i, e.target.value)}
+                      placeholder={t.gl_bulkTitlePerPhoto || 'Title for this photo'}
+                      aria-label={t.gl_bulkTitlePerPhoto || 'Title for this photo'}
+                      className={`${input} mt-1 !py-1.5 text-sm`}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeAt(i)}
+                    disabled={uploading}
+                    title={t.remove || 'Remove'}
+                    aria-label={t.remove || 'Remove'}
+                    className="shrink-0 rounded-lg p-2 text-mute transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={chooseFiles}
+            className="hidden"
+            aria-label={fill(t.gl_bulkChoose || 'Choose up to {max} photos', { max: BULK_MAX })}
+          />
+          {fileError && <p role="alert" className="mt-2 text-sm text-red-600">{fileError}</p>}
+        </div>
+
+        {/* One title for the whole batch */}
+        <div className="space-y-5 rounded-xl border border-vermilion/25 bg-vermilion/[0.04] p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-vermilion">
+            {t.gl_bulkShared || 'Written once, used for every photo above'}
+          </p>
+
+          <fieldset className="space-y-2">
+            <legend className="mb-1 block text-sm font-semibold text-ink">
+              {t.gl_titleLabel || 'Title'} <span className="text-vermilion" aria-hidden="true">*</span>
+            </legend>
+            {DETAIL_LANGS.map((l) => (
+              <div key={l}>
+                <label htmlFor={`gb-title-${l}`} className="mb-1 block text-xs font-semibold text-ink-soft">
+                  {l === 'en' ? (t.gl_langEn || 'English') : (t.gl_langNe || 'नेपाली')}
+                </label>
+                <input
+                  id={`gb-title-${l}`}
+                  type="text"
+                  value={details.title[l]}
+                  onChange={(e) => {
+                    const next = { ...details, title: { ...details.title, [l]: e.target.value } };
+                    change(next);
+                    // Typing the shared title pushes it onto every row, so the
+                    // per-photo boxes stay in step with what was just written.
+                    setRows((prev) => prev.map((r) => ({ ...r, title: r.title || e.target.value })));
+                  }}
+                  placeholder={t.gl_bulkTitlePh || 'e.g. Annual Bhajan and Kirtan'}
+                  aria-invalid={titleError ? true : undefined}
+                  className={`${input} ${titleError ? 'border-red-400' : ''}`}
+                />
+              </div>
+            ))}
+            {titleError && <p role="alert" className="text-sm text-red-600">{titleError}</p>}
+            {sharedTitle && rows.some((r) => r.title !== sharedTitle) && (
+              <button type="button" onClick={applySharedTitleToAll} className="text-xs font-semibold text-brand-600 hover:underline">
+                {t.gl_bulkApplyAll || 'Use this title on all photos'}
+              </button>
+            )}
+          </fieldset>
+
+          <fieldset className="space-y-2">
+            <legend className="mb-1 block text-sm font-semibold text-ink">
+              {t.gl_descLabel || 'Description'}
+              <span className="ml-1.5 font-normal text-mute">
+                ({t.gl_bulkDescOptional || 'optional, can be added later'})
+              </span>
+            </legend>
+            {DETAIL_LANGS.map((l) => (
+              <div key={l}>
+                <label htmlFor={`gb-desc-${l}`} className="mb-1 block text-xs font-semibold text-ink-soft">
+                  {l === 'en' ? (t.gl_langEn || 'English') : (t.gl_langNe || 'नेपाली')}
+                </label>
+                <textarea
+                  id={`gb-desc-${l}`}
+                  rows={2}
+                  value={details.description[l]}
+                  onChange={(e) => change({ ...details, description: { ...details.description, [l]: e.target.value } })}
+                  className={`${input} resize-y`}
+                />
+              </div>
+            ))}
+          </fieldset>
+
+          <div>
+            <label htmlFor="gb-category" className="mb-1 block text-sm font-semibold text-ink">
+              {t.a2_category || 'Category'}
+            </label>
+            <select
+              id="gb-category"
+              value={details.category}
+              onChange={(e) => change({ ...details, category: e.target.value })}
+              className={`${input} bg-white`}
+            >
+              {CATEGORY_KEYS.map(([key, tKey, fallback]) => (
+                <option key={key} value={key}>{t[tKey] || fallback}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={uploading}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-gray-300 disabled:opacity-50"
+          >
+            {done > 0 ? (t.gl_close || 'Close') : (t.gl_cancel || 'Cancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={uploading || files.length === 0 || done > 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-vermilion px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#820606] disabled:opacity-60"
+          >
+            {uploading && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+            {uploading
+              ? (t.uploading || 'Uploading...')
+              : fill(t.gl_bulkSubmit || 'Add {n} photo(s)', { n: files.length })}
           </button>
         </div>
       </form>

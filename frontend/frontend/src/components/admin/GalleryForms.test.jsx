@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
 import api from '../../services/api';
-import { GalleryUploadModal, GalleryEditModal, detailsFromItem, hasDetails, validateDetails } from './GalleryForms';
+import { GalleryUploadModal, GalleryEditModal, GalleryBulkUploadModal, detailsFromItem, hasDetails, validateDetails } from './GalleryForms';
 
 jest.mock('../../services/api', () => ({ __esModule: true, default: { post: jest.fn(), put: jest.fn() } }));
 jest.mock('../../context/ToastContext', () => ({ useToast: () => ({ showToast: jest.fn() }) }));
@@ -41,6 +41,12 @@ const type = (el, value) => {
 const pickFile = (file) => act(() => {
   const input = $('input[type=file]');
   Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+});
+/** The bulk form takes several files in one pick. */
+const pickFiles = (...files) => act(() => {
+  const input = $('input[type=file]');
+  Object.defineProperty(input, 'files', { value: files, configurable: true });
   input.dispatchEvent(new Event('change', { bubbles: true }));
 });
 const submit = async () => { await act(async () => { $('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); }); };
@@ -140,6 +146,109 @@ describe('GalleryUploadModal', () => {
     Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
     pickFile(big);
     expect(alerts()[0]).toMatch(/too large/);
+  });
+});
+
+describe('GalleryBulkUploadModal', () => {
+  const six = (n) => Array.from({ length: n }, (_, i) => new File(['x'], `p${i}.jpg`, { type: 'image/jpeg' }));
+
+  test('sends nothing until a photo and a title are there', async () => {
+    const onUploaded = jest.fn();
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={onUploaded} />);
+
+    await submit();
+    expect(api.post).not.toHaveBeenCalled();
+    // With nothing picked the form stops at the file, so only that one is shown.
+    expect(alerts()).toEqual(['Choose a photo or a video.']);
+
+    pickFiles(...six(3));
+    await submit();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(alerts()).toEqual(['Give the batch a title, or write one on a photo.']);
+  });
+
+  test('one title is written once and applied to every photo', async () => {
+    api.post.mockResolvedValue({ data: { data: [{ _id: 'a' }, { _id: 'b' }, { _id: 'c' }], count: 3 } });
+    const onUploaded = jest.fn();
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={onUploaded} />);
+
+    pickFiles(...six(3));
+    type($('#gb-title-en'), 'Evening aarti');
+    await submit();
+
+    expect(api.post).toHaveBeenCalledTimes(1);
+    const [url, form] = api.post.mock.calls[0];
+    expect(url).toBe('/admin/gallery/bulk');
+    expect(form.getAll('photos').map((f) => f.name)).toEqual(['p0.jpg', 'p1.jpg', 'p2.jpg']);
+    const data = JSON.parse(form.get('data'));
+    expect(data.title).toEqual({ en: 'Evening aarti', ne: '' });
+    expect(data.titles.map((r) => r.title.en)).toEqual(['Evening aarti', 'Evening aarti', 'Evening aarti']);
+    expect(onUploaded).toHaveBeenCalledWith([{ _id: 'a' }, { _id: 'b' }, { _id: 'c' }]);
+  });
+
+  test('a photo can be given its own title without another round trip', async () => {
+    api.post.mockResolvedValue({ data: { data: [{ _id: 'a' }, { _id: 'b' }], count: 2 } });
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+
+    pickFiles(...six(2));
+    type($('#gb-title-en'), 'Evening aarti');
+    const perPhoto = [...container.querySelectorAll('input[aria-label="Title for this photo"]')];
+    expect(perPhoto).toHaveLength(2);
+    type(perPhoto[1], 'Morning aarti');
+    await submit();
+
+    const data = JSON.parse(api.post.mock.calls[0][1].get('data'));
+    expect(data.titles).toEqual([
+      { file: 'p0.jpg', title: { en: 'Evening aarti' } },
+      { file: 'p1.jpg', title: { en: 'Morning aarti' } },
+    ]);
+  });
+
+  test('a per-photo title alone is enough to publish the batch', async () => {
+    api.post.mockResolvedValue({ data: { data: [{ _id: 'a' }], count: 1 } });
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+
+    pickFiles(...six(1));
+    type(container.querySelector('input[aria-label="Title for this photo"]'), 'Only this one');
+    await submit();
+
+    const data = JSON.parse(api.post.mock.calls[0][1].get('data'));
+    expect(data.titles[0].title.en).toBe('Only this one');
+  });
+
+  test('takes at most six photos and says the rest were not added', async () => {
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+
+    pickFiles(...six(9));
+    expect(container.querySelectorAll('input[aria-label="Title for this photo"]')).toHaveLength(6);
+    expect(alerts()[0]).toMatch(/up to 6 photos at a time/);
+  });
+
+  test('a photo over 10 MB is skipped', () => {
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+    const big = new File(['x'], 'big.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
+    pickFiles(big, ...six(1));
+    expect(container.querySelectorAll('input[aria-label="Title for this photo"]')).toHaveLength(1);
+  });
+
+  test('a video is not accepted in a photo batch', () => {
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+    pickFiles(new File(['x'], 'rath.mp4', { type: 'video/mp4' }));
+    expect(container.querySelectorAll('input[aria-label="Title for this photo"]')).toHaveLength(0);
+  });
+
+  test('a partial failure is reported and the good photos are kept', async () => {
+    api.post.mockResolvedValue({ data: { data: [{ _id: 'a' }], count: 1, failed: [{ file: 'p1.jpg', message: 'No title' }] } });
+    render(<GalleryBulkUploadModal t={t} onClose={() => {}} onUploaded={() => {}} />);
+
+    pickFiles(...six(2));
+    type($('#gb-title-en'), 'Aarti');
+    await submit();
+
+    // The good one is shown as added, and the form will not submit twice.
+    expect(container.textContent).toMatch(/1 photo\(s\) added\./);
+    expect($('button[type=submit]').disabled).toBe(true);
   });
 });
 

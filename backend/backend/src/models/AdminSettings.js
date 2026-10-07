@@ -9,6 +9,36 @@ const localizedStringSchema = new mongoose.Schema({
   ta: { type: String, default: '' },
 }, { _id: false });
 
+// One block inside a program section. `type` decides which fields are read:
+//   'heading' -> text          (a sub-heading)
+//   'para'    -> text          (a paragraph)
+//   'list'    -> points        (bulleted items)
+//   'table'   -> headers, rows (a grid; each row is a list of localized cells)
+// `text` stays plain text: the public page prints it as written, so a stray
+// "<script>" is shown rather than executed.
+const programBlockSchema = new mongoose.Schema({
+  type: { type: String, default: 'para', enum: ['heading', 'para', 'list', 'table'] },
+  text: { type: localizedStringSchema, default: () => ({}) },
+  points: { type: [localizedStringSchema], default: () => [] },
+  headers: { type: [localizedStringSchema], default: () => [] },
+  rows: {
+    type: [{ _id: false, cells: { type: [localizedStringSchema], default: () => [] } }],
+    default: () => [],
+  },
+}, { _id: false });
+
+// One numbered section of the events page "Programs Conducted" block.
+const programSectionSchema = new mongoose.Schema({
+  key: { type: String, default: '' },
+  title: { type: localizedStringSchema, default: () => ({}) },
+  // Optional. A section saved without a photo is published as a numbered block
+  // on its own, with no empty picture area left on the page.
+  photo: { type: String, default: '' },
+  blocks: { type: [programBlockSchema], default: () => [] },
+  order: { type: Number, default: 0 },
+  enabled: { type: Boolean, default: true },
+}, { _id: false });
+
 const adminSettingsSchema = new mongoose.Schema({
   // ============================================
   // LANGUAGES (super-admin enabled/disabled)
@@ -871,6 +901,16 @@ aboutPreview: {
   },
 
   // ============================================
+  // EVENTS PAGE — "PROGRAMS CONDUCTED" SECTIONS
+  // ============================================
+  // The numbered blocks under the "आयोजन गरिने कार्यक्रमहरू" heading. Edited on
+  // Admin → Events, published once from data/templePrograms.js.
+  programSections: {
+    type: [programSectionSchema],
+    default: () => [],
+  },
+
+  // ============================================
   // FOOTER SETTINGS
   // ============================================
   footer: {
@@ -887,7 +927,7 @@ aboutPreview: {
     showSupport: { type: Boolean, default: true },
     showMap: { type: Boolean, default: true },
     showMadeBy: { type: Boolean, default: true },
-    mapUrl: { type: String, default: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.245849736379!2d85.3221176!3d27.7170489!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb190c9f5c8d7b%3A0x4f8b3f8b3f8b3f8b!2sGaushala%2C%20Kathmandu%2044600!5e0!3m2!1sen!2snp!4v1700000000000' },
+    mapUrl: { type: String, default: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.3389018929365!2d85.33819027525377!3d27.706820676182783!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb19761839ec2b%3A0xcc3f44bcaa9f2a2f!2sRam%20Mandir%2C%20Battisputali!5e0!3m2!1sen!2snp!4v1791343152626!5m2!1sen!2snp' },
     socialLinks: {
       facebook: { enabled: { type: Boolean, default: true }, url: { type: String, default: 'https://facebook.com' } },
       youtube: { enabled: { type: Boolean, default: true }, url: { type: String, default: 'https://youtube.com' } },

@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, BellRing, CalendarDays, Download, ExternalLink, Sparkles, Sunrise, Sunset } from 'lucide-react';
-import { eventName, templeTitle } from '../../utils/calendarData';
-import { buildIcs, downloadIcs, googleCalendarUrl } from '../../utils/ics';
+import { Bell, BellRing, CalendarDays, Sparkles, Sunrise, Sunset } from 'lucide-react';
 import { reminderKey } from '../../hooks/useReminders';
 import { auspiciousText, markName, TithiMark } from './calendarUi';
 
@@ -60,20 +58,6 @@ const DayPanel = ({
   );
 
   const ownExisting = reminderByKey.get(reminderKey(own.eventDate, own.title));
-
-  // Whatever the day is called, for the calendar file and the Google link.
-  const names = [
-    ...day.events.map((e) => eventName(e, lang)),
-    ...day.temple.map((tp) => templeTitle(tp, lang)),
-  ].filter(Boolean);
-  const calTitle = names[0] || (day.mark ? markName(day.mark, t) : adLabel);
-  const calDetails = [names.slice(1).join(', '), bsLabel].filter(Boolean).join('\n');
-
-  const downloadDay = () =>
-    downloadIcs(
-      `temple-calendar-${day.key}.ics`,
-      buildIcs([{ uid: `day-${day.key}`, key: day.key, title: calTitle, description: calDetails }])
-    );
 
   const renderBell = (item, existing) => (
     <button
@@ -189,24 +173,6 @@ const DayPanel = ({
               : t.cal_remindThisDay || 'Remind me about this day'}
           </button>
         )}
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={downloadDay}
-            className="inline-flex items-center justify-center gap-1.5 h-10 rounded-full border border-line text-sm font-semibold text-ink hover:bg-panel transition"
-          >
-            <Download size={14} aria-hidden="true" /> {t.cal_downloadIcs || 'Download (.ics)'}
-          </button>
-          <a
-            href={googleCalendarUrl({ key: day.key, title: calTitle, details: calDetails })}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 h-10 rounded-full border border-line text-sm font-semibold text-ink hover:bg-panel transition"
-          >
-            <ExternalLink size={14} aria-hidden="true" /> {t.cal_googleCal || 'Google Calendar'}
-          </a>
-        </div>
       </div>
     </motion.section>
   );

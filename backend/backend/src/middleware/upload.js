@@ -45,6 +45,32 @@ for (const method of ['single', 'array', 'fields']) {
   upload[method] = (...args) => guardMultipart(original(...args));
 }
 
+/**
+ * Several photos in one request, for Admin -> Gallery. The shared `upload` instance
+ * allows a single file, so this is its own multer with the same Cloudinary folder and
+ * the same image-only check, but with room for a batch. The route also caps the count
+ * itself, so a hand-made request cannot exceed what the form offers.
+ */
+const GALLERY_BATCH_MAX = 6;
+
+const galleryBatchUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // photos only: the gallery page resizes them anyway
+    files: GALLERY_BATCH_MAX,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedImageTypes.includes(file.mimetype)) return cb(null, true);
+    const err = new Error(`Invalid file type: ${file.mimetype}. Only photos (JPG, PNG, GIF, WEBP) can be uploaded in a batch.`);
+    err.isUploadError = true;
+    return cb(err, false);
+  },
+});
+
+const galleryBatchArray = galleryBatchUpload.array.bind(galleryBatchUpload);
+galleryBatchUpload.array = (...args) => guardMultipart(galleryBatchArray(...args));
+
 // Error handling middleware for multer
 const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
@@ -123,6 +149,8 @@ const uploadBellSound = multer({
 module.exports = {
   upload,
   uploadBellSound,
+  uploadGalleryBatch: galleryBatchUpload,
+  GALLERY_BATCH_MAX,
   handleMulterError,
   // For backward compatibility
   single: upload.single.bind(upload),

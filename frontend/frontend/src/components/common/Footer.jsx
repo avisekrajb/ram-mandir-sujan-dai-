@@ -9,11 +9,10 @@ import { adToBs } from '../../utils/nepaliCalendar';
 import TempleIcon from './TempleIcon';
 import { getDonateNav, getPrimaryNav } from './header/navConfig';
 import { httpUrlFromInput, safeHttpUrl, safeSitePath, MAP_HOSTS } from '../../utils/safeUrl';
+import { TEMPLE_MAP_EMBED, TEMPLE_DIRECTIONS_URL, resolveAdminMapUrl } from '../../utils/templeMap';
 
-// Map embed (short maps.app.goo.gl links can't be embedded): the temple's pin on a
-// plain map. A pin without a place label, so nothing is cut off in the small box.
-const DEFAULT_MAP_URL = 'https://www.google.com/maps?q=27.7068207,85.3381903&z=16&hl=en&output=embed';
-const DEFAULT_ADDRESS = 'Battisputali, Gaushala, Kathmandu, Nepal';
+const DEFAULT_MAP_URL = TEMPLE_MAP_EMBED;
+const DEFAULT_ADDRESS = 'Battisputali, Kathmandu, Nepal';
 const WHATSAPP_URL = 'https://wa.me/9779851154432?text=Namaste!%20I%20want%20to%20know%20more%20about%20Shree%20Ramchandra%20Temple';
 // Photo/video footer backgrounds (set in Admin → Footer). Set to false to switch them off.
 const FOOTER_MEDIA_ENABLED = true;
@@ -93,7 +92,7 @@ const Footer = () => {
   // The map is framed, so the address must be https on a known map host (a `javascript:` or
   // look-alike address would otherwise run or phish inside the page).
   const adminMapUrl = safeHttpUrl(footer.mapUrl, MAP_HOSTS);
-  const mapUrl = adminMapUrl && !adminMapUrl.includes('maps.app.goo.gl') ? adminMapUrl : DEFAULT_MAP_URL;
+  const mapUrl = resolveAdminMapUrl(adminMapUrl) || DEFAULT_MAP_URL;
 
   const bgType = FOOTER_MEDIA_ENABLED ? footer.bgType : 'color';
   const hasMedia = (bgType === 'image' && footer.bgImage) || (bgType === 'video' && footer.bgVideo);
@@ -269,7 +268,7 @@ const Footer = () => {
                           />
                         </div>
                         <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`}
+                          href={TEMPLE_DIRECTIONS_URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`flex items-center justify-between gap-2 border-t px-3.5 py-2.5 text-sm font-medium transition-colors ${c.border} ${c.link}`}

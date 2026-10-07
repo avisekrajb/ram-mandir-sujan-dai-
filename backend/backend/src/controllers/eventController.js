@@ -30,6 +30,16 @@ exports.ensureSeedEvents = () => {
   if (!seedPromise) {
     seedPromise = (async () => {
       try {
+        // A seed dropped from DEFAULT_EVENTS is retired: the record published earlier must go
+        // too, otherwise it keeps showing on the page although it is no longer part of the app.
+        // Only seeded rows are touched - anything the admin added has no seedKey.
+        const liveSeedKeys = [...DEFAULT_EVENTS.map((s) => s.seedKey), '', null];
+        const retired = await Event.find({ seedKey: { $nin: liveSeedKeys } }).select('_id seedKey');
+        for (const ev of retired) {
+          await Event.deleteOne({ _id: ev._id });
+          console.log(`Events: removed retired seed "${ev.seedKey}"`);
+        }
+
         for (const seed of DEFAULT_EVENTS) {
           const exists = await Event.findOne({ seedKey: seed.seedKey });
           if (!exists) {

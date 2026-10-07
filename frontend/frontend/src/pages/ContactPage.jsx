@@ -10,28 +10,11 @@ import ReviewsSection from '../components/contact/ReviewsSection';
 import FaqSection from '../components/contact/FaqSection';
 import ContactWeather from '../components/contact/ContactWeather';
 import { rejectionMessage } from '../utils/rejectionMessage';
-
-// ── Map configuration ────────────────────────────────────────────────
-// Temple coordinates (Battisputali, Kathmandu, Nepal)
-const TEMPLE_LAT = 27.70426855;
-const TEMPLE_LNG = 85.342925;
-
-// Canonical Google Maps short link (opens app on mobile, web on desktop)
-const DIRECTIONS_URL = 'https://maps.app.goo.gl/h3c1HpR4vQpCxGLD8';
-
-// Real embed — Google Maps (primary)
-const GOOGLE_EMBED =
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7064.843056298416!2d85.342925!3d27.70426855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb199d17032265%3A0xc7e605b267b03e75!2sBattisputali%2C%20Kathmandu%2C%20Bagmati%20Province%2044600!5e0!3m2!1sen!2snp!4v1791003263092!5m2!1sen!2snp';
-
-// Fallback embed — OpenStreetMap (used if Google iframe fails)
-const MAP_BBOX = [
-  (TEMPLE_LNG - 0.005).toFixed(4),
-  (TEMPLE_LAT - 0.003).toFixed(4),
-  (TEMPLE_LNG + 0.005).toFixed(4),
-  (TEMPLE_LAT + 0.003).toFixed(4),
-].join('%2C');
-
-const FALLBACK_EMBED = `https://www.openstreetmap.org/export/embed.html?bbox=${MAP_BBOX}&layer=mapnik&marker=${TEMPLE_LAT},${TEMPLE_LNG}`;
+import {
+  TEMPLE_MAP_EMBED,
+  TEMPLE_MAP_FALLBACK_EMBED,
+  TEMPLE_DIRECTIONS_URL as DIRECTIONS_URL,
+} from '../utils/templeMap';
 
 const MAX_MESSAGE = 1000;
 
@@ -413,7 +396,7 @@ const ContactPage = () => {
                 key={mapSource}
                 title="Shree Ramchandra Mandir Location — Battisputali, Kathmandu, Nepal"
                 className="absolute inset-0 h-full w-full border-0"
-                src={mapSource === 'primary' ? GOOGLE_EMBED : FALLBACK_EMBED}
+                src={mapSource === 'primary' ? TEMPLE_MAP_EMBED : TEMPLE_MAP_FALLBACK_EMBED}
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
