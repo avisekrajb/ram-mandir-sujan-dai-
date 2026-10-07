@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import api from '../services/api';
 import {
   getToken, setToken, removeToken, setUser, getUser, removeUser,
-  isSessionEndedError, requestPersistentStorage, SESSION_ENDED_EVENT,
+  isSessionEndedError, isRestrictedUser, requestPersistentStorage,
+  SESSION_ENDED_EVENT, ACCOUNT_RESTRICTED_EVENT,
 } from '../services/auth';
 
 const AuthContext = createContext(null);
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }) => {
   const initialized = useRef(false);
   const lastVerifiedAt = useRef(0);
   const retryTimer = useRef(null);
+  const [restrictedUntil, setRestrictedUntil] = useState(null);
 
   // Confirm the saved login with the server, in the background, and pick up a
   // renewed token. Only a server answer that says the session is over signs the
@@ -254,10 +256,25 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  // The server refused a call because this account is suspended for a while.
+  // The saved login stays; only where the person may go changes.
+  useEffect(() => {
+    const onRestricted = (e) => {
+      setRestrictedUntil(e.detail?.until || getUser()?.suspendedUntil || null);
+      refreshUser();
+    };
+    window.addEventListener(ACCOUNT_RESTRICTED_EVENT, onRestricted);
+    return () => window.removeEventListener(ACCOUNT_RESTRICTED_EVENT, onRestricted);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-registers when refreshUser changes
+  }, [refreshUser]);
+
   // Check if user is admin
   const isAdmin = useCallback(() => {
     return user?.role === 'admin' || user?.role === 'superadmin';
   }, [user]);
+
+  // Suspended for a while: signed in, but held to the home page.
+  const restricted = useCallback(() => isRestrictedUser(user), [user]);
 
   // Check if user is authenticated
   const isAuthenticated = useCallback(() => {
@@ -288,6 +305,9 @@ export const AuthProvider = ({ children }) => {
         refreshUser,
         isAdmin,
         isAuthenticated,
+        // Timed suspension: signed in, home page only.
+        restricted,
+        suspendedUntil: restricted() ? user?.suspendedUntil || restrictedUntil : null,
         getDisplayName,
         getProfilePhoto,
       }}

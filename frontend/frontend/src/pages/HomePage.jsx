@@ -9,6 +9,7 @@ import { ArrowRight, X, Download, Tv, RefreshCw, Play, Pause, QuoteIcon, Clock, 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import api from '../services/api';
+import { SuspendedBanner } from '../routes/RestrictedRoute';
 import { handleImageError } from '../utils/imageFallback';
 import OmLoader from '../components/common/OmLoader';
 import HeroShloka from '../components/common/HeroShloka';
@@ -1792,6 +1793,8 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const fetched = useRef(false);
   const { t, lang } = useLanguage();
+  // Set when this account is suspended for a while: signed in, home page only.
+  const { suspendedUntil } = useAuth();
 
   useEffect(() => {
     if (fetched.current) return;
@@ -1881,6 +1884,8 @@ const HomePage = () => {
 
   return (
     <>
+      {/* Why the rest of the site is closed to this visitor, and for how long. */}
+      <SuspendedBanner suspendedUntil={suspendedUntil} t={t} />
       <Hero settings={settings} />
       <QuoteStrip quote={quote} />
       <AboutPreview settings={settings} />

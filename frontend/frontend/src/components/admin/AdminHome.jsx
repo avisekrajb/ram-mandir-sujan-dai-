@@ -2,10 +2,79 @@ import React, { useState, useRef } from 'react';
 import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 import { 
-  Save, Video, Trash2, Plus, MoveUp, MoveDown, Eye, EyeOff, Image
+  Save, Video, Trash2, Plus, MoveUp, MoveDown, Eye, EyeOff, Image, Type
 } from 'lucide-react';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import OmLoader from '../../components/common/OmLoader';
+
+/*
+ * Hero banner copy. Moved here from the old /admin/hero screen so the whole home
+ * page - banner media and the words over it - is managed from one place.
+ */
+const DEFAULT_HERO_TITLE = {
+  en: 'Shree Ramchandra Temple',
+  ne: 'श्री रामचन्द्र मन्दिर',
+  hi: 'श्री रामचंद्र मंदिर',
+  zh: '什里·拉姆钱德拉神庙',
+  ta: 'ஸ்ரீ ராமச்சந்திர கோவில்',
+};
+
+const DEFAULT_HERO_TAGLINE = {
+  en: 'Where devotion meets the sacred banks of Bagmati',
+  ne: 'जहाँ भक्ति बागमतीको पवित्र किनारमा मिल्छ',
+  hi: 'जहाँ भक्ति बागमती के पवित्र तटों से मिलती है',
+  zh: '虔诚与巴格马蒂圣河相遇之处',
+  ta: 'பக்தி பாக்மதியின் புனித கரையில் சந்திக்கும் இடம்',
+};
+
+const DEFAULT_HERO_SHLOKA = {
+  invocation: {
+    en: 'Salutations to Lord Shri Ramachandra.',
+    ne: 'श्रीरामचन्द्राय नमः',
+    hi: 'श्रीरामचन्द्राय नमः',
+    zh: '向室利罗摩旃陀罗致敬。',
+    ta: 'ஸ்ரீ ராமச்சந்திராய நமஹ',
+  },
+  stutiLabel: {
+    en: 'Hymn to Shri Rama:',
+    ne: 'श्रीरामस्तुति:',
+    hi: 'श्रीराम स्तुति:',
+    zh: '室利罗摩赞颂：',
+    ta: 'ஸ்ரீ ராம ஸ்துதி:',
+  },
+  verse: {
+    en: 'I seek refuge in Lord Shri Ramachandra, who is beloved of all, courageous on the battlefield, lotus-eyed, and the Lord of the Raghu dynasty; who embodies compassion and is the bestower of mercy.',
+    ne: 'लोकाभिरामं रणरङ्गधीरं राजीवनेत्रं रघुवंशनाथम्।\nकारुण्यरूपं करुणाकरं तं श्रीरामचन्द्रं शरणं प्रपद्ये॥',
+    hi: 'लोकाभिरामं रणरङ्गधीरं राजीवनेत्रं रघुवंशनाथम्।\nकारुण्यरूपं करुणाकरं तं श्रीरामचन्द्रं शरणं प्रपद्ये॥',
+    zh: '我皈依于室利罗摩旃陀罗，他令人世间喜爱，战场上英勇无畏，拥有如莲花般的双眼，是拉古王朝之主；他是慈悲的化身，是施予慈悲与恩典之主。',
+    ta: 'உலகத்தாரால் நேசிக்கப்படுபவரும், போர்க்களத்தில் வீரமும் துணிவும் கொண்டவரும், தாமரை போன்ற கண்களையுடையவரும், ரகு வம்சத்தின் தலைவருமான ஸ்ரீ ராமச்சந்திரரை நான் சரணடைகிறேன். அவர் கருணையின் வடிவமாகவும், அருளை வழங்குபவராகவும் விளங்குகிறார்.',
+  },
+};
+
+/*
+ * Blank stored values are skipped so the form always opens on the seeded text:
+ * an empty banner is never saved by accident, and clearing a language here
+ * leaves it on the default rather than removing it from the home page.
+ * Records written by an older build hold a group wrapped in a one-element array
+ * (`verse: [{ en, ... }]`); it is unwrapped so the real text shows up instead of
+ * an empty box.
+ */
+const withDefaults = (defaults, stored) => {
+  const source =
+    Array.isArray(stored) ? stored.find((entry) => entry && typeof entry === 'object') || {} : stored;
+  const merged = { ...defaults };
+  for (const [code, value] of Object.entries(source || {})) {
+    if (code in defaults && String(value ?? '').trim()) merged[code] = value;
+  }
+  return merged;
+};
+
+const seedShloka = (stored) => ({
+  enabled: stored?.enabled !== false,
+  invocation: withDefaults(DEFAULT_HERO_SHLOKA.invocation, stored?.invocation ?? stored?.label),
+  stutiLabel: withDefaults(DEFAULT_HERO_SHLOKA.stutiLabel, stored?.stutiLabel),
+  verse: withDefaults(DEFAULT_HERO_SHLOKA.verse, stored?.verse),
+});
 
 const AdminHome = ({ settings, updateSettings, t }) => {
   const { showToast } = useToast();
@@ -13,12 +82,19 @@ const AdminHome = ({ settings, updateSettings, t }) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const aboutInputRef = useRef(null);
 
-  // Hero Video
+  // Hero banner - media and the words shown over it
   const [heroVideo, setHeroVideo] = useState(settings?.heroVideo || null);
   const [heroEnabled, setHeroEnabled] = useState(settings?.heroEnabled !== false);
+  // The banner shows a photo or a video, never both. The server retires the
+  // other one on upload, and this mirrors it so the panel never offers two.
+  const [heroImage, setHeroImage] = useState(settings?.heroImage || null);
+  const [heroTitle, setHeroTitle] = useState({ ...(settings?.heroTitle || DEFAULT_HERO_TITLE) });
+  const [heroTagline, setHeroTagline] = useState({ ...(settings?.heroTagline || DEFAULT_HERO_TAGLINE) });
+  const [heroShloka, setHeroShloka] = useState(() => seedShloka(settings?.heroShloka));
 
   // Gallery Images
   const [galleryImages, setGalleryImages] = useState(settings?.galleryImages || []);
@@ -85,8 +161,10 @@ const AdminHome = ({ settings, updateSettings, t }) => {
       const response = await api.post('/admin/upload/hero', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // The upload endpoint already cleared the photo, so the panel follows it.
       setHeroVideo(response.data.url);
-      showToast((t.a3_home_heroUploaded || 'Hero video uploaded successfully'), 'success');
+      setHeroImage(null);
+      showToast(t.videoUploaded || (t.a3_home_heroUploaded || 'Hero video uploaded successfully'), 'success');
     } catch (error) {
       console.error('Upload error:', error);
       showToast(error.response?.data?.message || (t.a3_c_uploadFailed || 'Upload failed'), 'error');
@@ -96,9 +174,75 @@ const AdminHome = ({ settings, updateSettings, t }) => {
     e.target.value = '';
   };
 
-  const handleHeroRemove = () => {
-    setHeroVideo(null);
-    showToast((t.a3_home_heroRemoved || 'Hero video removed'), 'success');
+  const handleHeroPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast((t.a3_c_uploadPhotoOnly || 'Please upload an image file'), 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast((t.a3_c_photoMaxSize || 'Photo must be less than {size}MB').replace('{size}', '10'), 'error');
+      return;
+    }
+
+    if (heroVideo && !window.confirm((t.a3_hero_photoReplacesVideo || 'Uploading a photo will replace the hero video. Continue?'))) {
+      e.target.value = '';
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await api.post('/admin/upload/hero-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setHeroImage(response.data.url);
+      setHeroVideo(null);
+      showToast((t.a3_hero_photoUploaded || 'Photo uploaded successfully'), 'success');
+    } catch (error) {
+      console.error('Upload photo error:', error);
+      showToast(error.response?.data?.message || (t.a3_c_uploadFailed || 'Upload failed'), 'error');
+    } finally {
+      setUploading(false);
+    }
+    e.target.value = '';
+  };
+
+  // Both removals write to the server. Clearing the field on screen alone would
+  // look done and come straight back on the next reload.
+  const handleHeroRemove = async () => {
+    if (!window.confirm((t.a3_hero_removeConfirm || 'Remove the hero video?'))) return;
+    setUploading(true);
+    try {
+      await updateSettings({ heroVideo: null });
+      setHeroVideo(null);
+      showToast((t.a3_hero_videoRemoved || 'Video removed successfully'), 'success');
+    } catch (error) {
+      console.error('Remove error:', error);
+      showToast(error.response?.data?.message || (t.a3_hero_removeFailed || 'Failed to remove video'), 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleHeroPhotoRemove = async () => {
+    if (!window.confirm((t.a3_hero_removePhotoConfirm || 'Remove the hero photo?'))) return;
+    setUploading(true);
+    try {
+      await updateSettings({ heroImage: null });
+      setHeroImage(null);
+      showToast((t.a3_hero_photoRemoved || 'Photo removed successfully'), 'success');
+    } catch (error) {
+      console.error('Remove photo error:', error);
+      showToast(error.response?.data?.message || (t.a3_hero_photoRemoveFailed || 'Failed to remove photo'), 'error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   // ===== GALLERY IMAGES =====
@@ -242,8 +386,12 @@ const AdminHome = ({ settings, updateSettings, t }) => {
     setLoading(true);
     try {
       const data = {
+        heroImage,
         heroVideo,
         heroEnabled,
+        heroTitle,
+        heroTagline,
+        heroShloka,
         galleryImages,
         aboutPreview: {
           images: aboutPreviewImages,
@@ -274,26 +422,26 @@ const AdminHome = ({ settings, updateSettings, t }) => {
 
   return (
     <div className="space-y-6">
-      {/* Hero Section */}
+      {/* ===== HERO BANNER (media + text, formerly a separate /admin/hero page) ===== */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h4 className="text-base font-serif font-semibold text-ink">{t.a3_home_heroVideo || 'Hero Video'}</h4>
-            <p className="text-xs text-ink-soft">{t.a3_home_heroVideoHint || 'Upload a hero video for the homepage'}</p>
+            <h4 className="text-base font-serif font-semibold text-ink">{t.a3_hero_titleLabel || 'Hero Banner'}</h4>
+            <p className="text-xs text-ink-soft">{t.a3_hero_uploadHint || 'Upload a photo or a video for the hero section'}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-soft">
-              <input
-                type="checkbox"
-                checked={heroEnabled}
-                onChange={(e) => setHeroEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-vermilion focus:ring-vermilion"
-              />
-              {t.a3_c_showOnHomepage || 'Show on Homepage'}
-            </label>
-          </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-ink-soft whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={heroEnabled}
+              onChange={(e) => setHeroEnabled(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-vermilion focus:ring-vermilion"
+            />
+            {t.a3_c_showOnHomepage || 'Show on Homepage'}
+          </label>
         </div>
 
+        {/* Photo and video are alternatives - the server retires one when the
+            other is uploaded, so only the live one is offered for replacement. */}
         <div className="relative border-2 border-dashed border-gray-300 rounded-xl overflow-hidden bg-gray-50 hover:border-vermilion transition-colors">
           {heroVideo ? (
             <div className="relative aspect-video">
@@ -308,14 +456,40 @@ const AdminHome = ({ settings, updateSettings, t }) => {
                 </button>
               </div>
             </div>
+          ) : heroImage ? (
+            <div className="relative aspect-video">
+              <img src={heroImage} alt={heroTitle?.[activeLang] || 'Hero'} className="w-full h-full object-cover" />
+              <div className="absolute top-2 right-2 flex gap-2">
+                <button
+                  onClick={handleHeroPhotoRemove}
+                  aria-label={(t.a3_c_removeImage || 'Remove photo')}
+                  className="p-2 rounded-lg bg-red-500/80 text-white hover:bg-red-500 transition-all"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
           ) : (
-            <div 
-              className="flex flex-col items-center justify-center h-48 cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Video size={40} className="text-mute mb-2" />
-              <span className="text-sm font-medium text-ink-soft">{t.a3_home_clickUploadHero || 'Click to upload hero video'}</span>
-              <span className="text-xs text-mute">MP4, MOV, AVI • {(t.a5_maxFileSize || 'Max {size}').replace('{size}', '50MB')}</span>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 h-48 p-4">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center px-6 py-3 rounded-lg hover:bg-white transition-colors"
+              >
+                <Video size={32} className="text-mute mb-1.5" />
+                <span className="text-sm font-medium text-ink-soft">{t.a3_home_clickUploadHero || 'Upload hero video'}</span>
+                <span className="text-xs text-mute">MP4, MOV, AVI • {(t.a5_maxFileSize || 'Max {size}').replace('{size}', '50MB')}</span>
+              </button>
+              <span className="text-xs text-mute">or</span>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="flex flex-col items-center justify-center px-6 py-3 rounded-lg hover:bg-white transition-colors"
+              >
+                <Image size={32} className="text-mute mb-1.5" />
+                <span className="text-sm font-medium text-ink-soft">{t.a3_hero_uploadPhoto || 'Upload hero photo'}</span>
+                <span className="text-xs text-mute">JPG, PNG, WEBP • {(t.a3_c_photoMaxSize || 'Max {size}MB').replace('{size}', '10MB')}</span>
+              </button>
             </div>
           )}
           <input
@@ -323,6 +497,13 @@ const AdminHome = ({ settings, updateSettings, t }) => {
             type="file"
             accept="video/*"
             onChange={handleHeroVideoUpload}
+            className="hidden"
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleHeroPhotoUpload}
             className="hidden"
           />
           {uploading && (
@@ -334,14 +515,96 @@ const AdminHome = ({ settings, updateSettings, t }) => {
             </div>
           )}
         </div>
-        {heroVideo && (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-2 text-xs text-vermilion hover:text-[#820606] transition-colors"
-          >
-            {t.a3_c_changeVideo || 'Change Video'}
-          </button>
+        {(heroVideo || heroImage) && (
+          <div className="mt-2 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 text-xs text-vermilion hover:text-[#820606] transition-colors"
+            >
+              <Video size={14} /> {heroVideo ? (t.a3_c_changeVideo || 'Change Video') : (t.a3_hero_useVideo || 'Use a video')}
+            </button>
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 text-xs text-vermilion hover:text-[#820606] transition-colors"
+            >
+              <Image size={14} /> {heroImage ? (t.a3_hero_changePhoto || 'Change photo') : (t.a3_hero_usePhoto || 'Use a photo')}
+            </button>
+          </div>
         )}
+
+        {/* Text shown over the banner */}
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Type size={16} className="text-vermilion" aria-hidden="true" />
+            <h5 className="text-sm font-semibold text-ink">{t.a3_hero_textLabel || 'Banner text'}</h5>
+          </div>
+          <LanguageSwitcher active={activeLang} onChange={setActiveLang} />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                {(t.a3_c_titleLang || 'Title ({lang})').replace('{lang}', activeLang.toUpperCase())}
+              </label>
+              <input
+                type="text"
+                aria-label={(t.a3_c_titleLang || 'Title ({lang})').replace('{lang}', activeLang.toUpperCase())}
+                value={getLocalizedValue(heroTitle, activeLang)}
+                onChange={(e) => setHeroTitle({ ...heroTitle, [activeLang]: e.target.value })}
+                placeholder={(t.a3_c_enterTitleIn || 'Enter title in {lang}').replace('{lang}', activeLang)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-vermilion focus:outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                {(t.a3_c_subtitleLang || 'Subtitle ({lang})').replace('{lang}', activeLang.toUpperCase())}
+              </label>
+              <input
+                type="text"
+                aria-label={(t.a3_c_subtitleLang || 'Subtitle ({lang})').replace('{lang}', activeLang.toUpperCase())}
+                value={getLocalizedValue(heroTagline, activeLang)}
+                onChange={(e) => setHeroTagline({ ...heroTagline, [activeLang]: e.target.value })}
+                placeholder={(t.a3_c_enterSubtitleIn || 'Enter subtitle in {lang}').replace('{lang}', activeLang)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-vermilion focus:outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-gray-100 bg-panel p-4">
+            <label className="flex items-center gap-2 text-sm font-medium text-ink-soft mb-3">
+              <input
+                type="checkbox"
+                checked={heroShloka.enabled}
+                onChange={(e) => setHeroShloka({ ...heroShloka, enabled: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-vermilion focus:ring-vermilion"
+              />
+              {t.a3_hero_shlokaLabel || 'Show shloka'}
+            </label>
+            {heroShloka.enabled && (
+              <div className="space-y-3">
+                {[
+                  ['invocation', t.a3_hero_invocation || 'Invocation'],
+                  ['stutiLabel', t.a3_hero_stutiLabel || 'Stuti label'],
+                  ['verse', t.a3_hero_verse || 'Verse'],
+                ].map(([part, label]) => (
+                  <div key={part}>
+                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                      {label} ({activeLang.toUpperCase()})
+                    </label>
+                    <textarea
+                      rows={part === 'verse' ? 3 : 2}
+                      aria-label={`${label} (${activeLang.toUpperCase()})`}
+                      value={heroShloka[part]?.[activeLang] || ''}
+                      onChange={(e) => setHeroShloka({ ...heroShloka, [part]: { ...heroShloka[part], [activeLang]: e.target.value } })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-vermilion focus:outline-none text-sm resize-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Gallery Images */}

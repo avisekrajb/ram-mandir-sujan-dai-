@@ -705,6 +705,20 @@ aboutPreview: {
       'Film & Music Video Shooting',
     ],
   },
+  /*
+   * Which of the seeded puja types have already been offered.
+   *
+   * getSettings tops up anything missing from the seed list, which is how the
+   * ceremonies the temple can host reach the booking form. That top-up used to
+   * have no memory, so an administrator who deleted a type got it straight back
+   * on the next page load. Recording each type as it is offered means a delete
+   * sticks, while a genuinely new type added to the seed code later still
+   * appears on its own.
+   */
+  pujaTypesSeeded: {
+    type: [String],
+    default: [],
+  },
   dateLimits: {
     type: Map,
     of: Number,

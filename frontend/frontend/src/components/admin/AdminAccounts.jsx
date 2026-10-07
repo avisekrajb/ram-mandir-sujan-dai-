@@ -87,6 +87,19 @@ const AccountDetail = ({ id, viewer, t, lang, refreshKey, onAction }) => {
           <p className="font-semibold">
             {t.k7_suspended || 'Suspended'}{data.suspendedAt ? ` · ${timeAgo(data.suspendedAt, t, lang)}` : ''}
           </p>
+          {/* A timed suspension lifts itself; say when, and what it means meanwhile. */}
+          {data.suspendedUntil ? (
+            <p className="mt-0.5 text-red-700/90">
+              {(t.k7_suspendedUntilMsg || 'Home page only until {when}.').replace(
+                '{when}',
+                fullDate(data.suspendedUntil, lang)
+              )}
+            </p>
+          ) : (
+            <p className="mt-0.5 text-red-700/90">
+              {t.k7_suspendedForeverHint || 'Cannot sign in at all until an admin lifts this.'}
+            </p>
+          )}
           {data.suspendedReason && <p className="mt-0.5 text-red-700/90">{data.suspendedReason}</p>}
         </div>
       )}

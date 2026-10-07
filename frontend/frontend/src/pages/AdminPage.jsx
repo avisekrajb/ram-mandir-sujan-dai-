@@ -19,7 +19,6 @@ import AdminAccounts from '../components/admin/AdminAccounts';
 import AdminAccess from '../components/admin/AdminAccess';
 import AdminAudit from '../components/admin/AdminAudit';
 import AdminProfile from '../components/admin/AdminProfile';
-import AdminHero from '../components/admin/AdminHero';
 import AdminLivePuja from '../components/admin/AdminLivePuja';
 import AdminHeader from '../components/admin/AdminHeader';
 import AdminQuote from '../components/admin/AdminQuote';
@@ -33,7 +32,7 @@ import AdminGallery from '../components/admin/AdminGallery';
 import AdminDonations from '../components/admin/AdminDonations';
 import AdminBookings from '../components/admin/AdminBookings';
 import AdminBookingContent from '../components/admin/AdminBookingContent';
-import AdminTempleBookings from '../components/admin/AdminTempleBookings';
+
 import AdminNotice from '../components/admin/AdminNotice';
 import AdminDailyAarti from '../components/admin/AdminDailyAarti';
 import AdminBlogs from '../components/admin/AdminBlogs';
@@ -394,9 +393,7 @@ const blocked = (pageArea && !hasArea(user, pageArea)) || (superOnlyPage && !isS
             {/* Content Management */}
             {/* Header: the thin strip above the navbar, which can be hidden */}
             <Route path="header" element={<AdminHeader t={t} />} />
-            <Route path="hero" element={<AdminHero
-              settings={settings} updateSettings={updateSettings} t={t}
-            />} />
+            {/* Hero banner lives on the Home page - see AdminHome */}
             {/* Live Puja: the YouTube channel and the fallback video */}
             <Route path="live-puja" element={<AdminLivePuja
               settings={settings} updateSettings={updateSettings} t={t}
@@ -456,8 +453,7 @@ const blocked = (pageArea && !hasArea(user, pageArea)) || (superOnlyPage && !isS
             <Route path="bookings" element={<AdminBookings 
               bookings={bookings} setBookings={setBookings} t={t}
             />} />
-            <Route path="bookings/manage" element={<AdminTempleBookings />} />
-                {/* The wording of the booking page itself (heading, labels, buttons, messages). */}
+            {/* The wording of the booking page itself (heading, labels, buttons, messages). */}
                 <Route path="booking-content" element={<AdminBookingContent t={t} />} />
 
             {/* Notice & Blogs */}

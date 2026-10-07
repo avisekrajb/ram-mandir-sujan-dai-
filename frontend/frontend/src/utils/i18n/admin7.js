@@ -8,6 +8,18 @@ const strings = {
   en: {},
   ne: {
     // Navigation / areas
+    // Timed suspension: 24 hours / 5 days / 10 days, plus open-ended.
+    k7_suspendLength: 'कति समयका लागि?',
+    k7_suspend24h: '२४ घण्टा',
+    k7_suspend5d: '५ दिन',
+    k7_suspend10d: '१० दिन',
+    k7_suspendForever: 'मैले नहटाएसम्म',
+    k7_suspend24hHint: 'सिर्फ गृहपृष्ठ, त्यसपछि आफैँ हट्छ',
+    k7_suspend5dHint: 'सिर्फ गृहपृष्ठ, त्यसपछि आफैँ हट्छ',
+    k7_suspend10dHint: 'सिर्फ गृहपृष्ठ, त्यसपछि आफैँ हट्छ',
+    k7_suspendForeverHint: 'प्रशासकले नहटाएसम्म साइन इन गर्न पाउनेछैन',
+    k7_suspendedUntilMsg: '{when} सम्म सिर्फ गृहपृष्ठमा मात्र।',
+    k7_suspendedNotice: 'तपाईंको खाता निलम्बन गरिएको छ, त्यसैले सिर्फ गृहपृष्ठ उपलब्ध छ। लगभग {left} पछि यो आफैँ हट्नेछ।',
     // The heading above the Overview page in the sidebar. It used to be a bare
     // button with no heading; it now matches the other four groups.
     k7_navOverview: 'सारांश',
@@ -152,9 +164,11 @@ const strings = {
     // Account actions & dialogs
     k7_suspend: 'निलम्बन गर्नुहोस्',
     k7_suspended: 'निलम्बित',
-    k7_suspendedToast: 'खाता निलम्बित भयो',
+    k7_suspendedToast: 'खाता {when} निलम्बन गरियो',
     k7_suspendTitle: 'यो खाता निलम्बन गर्ने?',
-    k7_suspendMsg: '{name} तुरुन्तै सबै ठाउँबाट साइन आउट हुनेछन् र तपाईंले खाता पुनः सक्रिय नगरेसम्म साइन इन गर्न सक्ने छैनन्।',
+    // A timed suspension no longer signs them out everywhere - see the hint text
+    // on each length, and k7_suspendForeverHint for the one that does.
+    k7_suspendMsg: '{name} लाई कति समयका लागि निलम्बन गर्ने?',
     k7_suspendReason: 'कारण (ऐच्छिक, प्रशासकले मात्र देख्छन्)',
     k7_reactivate: 'पुनः सक्रिय गर्नुहोस्',
     k7_reactivated: 'खाता पुनः सक्रिय भयो',

@@ -229,7 +229,14 @@ function App() {
                       }>
                         <Routes>
                           <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
-                          <Route path="/super/admin/*" element={<SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>} />
+                          {/*
+                            The console is addressable per page: /super/admin/admins,
+                            /super/admin/languages and so on. `:page?` also matches the bare
+                            /super/admin, which the page treats as the overview.
+                          */}
+                          <Route path="/super/admin/:page?" element={<SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>} />
+                          {/* Anything deeper falls back to the console rather than a blank page. */}
+                          <Route path="/super/admin/*" element={<Navigate to="/super/admin/overview" replace />} />
                         </Routes>
                       </Suspense>
                     )}

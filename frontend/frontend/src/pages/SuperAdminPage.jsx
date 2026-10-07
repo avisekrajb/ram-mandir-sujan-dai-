@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useParams, Navigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, ShieldCheck, Users, CalendarDays, Gift, Languages,
   ScrollText, Database, LogOut, Plus, Trash2, ToggleLeft, ToggleRight,
   ArrowLeft, RefreshCw, X, Eye, DatabaseZap, Cloud, Wrench, Download,
-  ChevronDown, Image as ImageIcon, Film, HardDrive
+  ChevronDown, Image as ImageIcon, Film, HardDrive, PanelTop, BellRing
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
-import { getSuperAdminOnlyItems } from '../components/admin/adminNav';
+// The super-admin-only admin pages, so they can be reached under /super/admin too
+// instead of dropping the reader out into the admin panel.
+import AdminAccount from '../components/admin/AdminAccount';
+import AdminAccess from '../components/admin/AdminAccess';
+import AdminBackup from '../components/admin/AdminBackup';
+import AdminBell from '../components/admin/AdminBell';
+import AdminHeader from '../components/admin/AdminHeader';
 import api from '../services/api';
 import { formatDate as formatLocaleDate, formatDateTimeLocale } from '../utils/formatDate';
 
@@ -35,6 +41,23 @@ const TABS = [
   { id: 'logs', label: 'Admin Logs', key: 'a6_tabLogs', icon: ScrollText },
   { id: 'database', label: 'Database', key: 'a6_tabDatabase', icon: Database },
 ];
+
+/*
+ * Pages a super administrator alone may open, mounted inside this console at
+ * /super/admin/<slug> so the whole super-admin area is one set of addresses. They
+ * keep working under /admin/... as well - these are the same components, and the
+ * admin sidebar is still the other way in.
+ */
+const DELEGATED = [
+  { slug: 'donationaccount', labelKey: 'donationAccount', label: 'Donation Account', adminKey: 'account', icon: Gift },
+  { slug: 'backupandrestore', labelKey: 'a2_navBackupRestore', label: 'Backup & Restore', adminKey: 'backup', icon: Database },
+  { slug: 'access', labelKey: 'k7_adminsAccess', label: 'Admins & access', adminKey: 'access', icon: ShieldCheck },
+  { slug: 'header', labelKey: 'a1_headerNavLabel', label: 'Header', adminKey: 'header', icon: PanelTop },
+  { slug: 'bellsound', labelKey: 'a1_bellNavLabel', label: 'Bell Sound', adminKey: 'bell', icon: BellRing },
+];
+
+const TAB_IDS = TABS.map((x) => x.id);
+const BASE = '/super/admin';
 
 // Atlas M0 free tier storage limit (real limit, not a made-up number)
 const ATLAS_FREE_LIMIT_MB = 512;
@@ -77,7 +100,18 @@ function SuperAdminPage() {
     refunded: t.refunded,
   }[s] || s);
 
-  const [tab, setTab] = useState('overview');
+  /*
+ * The console is addressable: /super/admin/<page>. The page shown comes from the
+ * URL rather than from state, so a tab can be refreshed, bookmarked and shared,
+ * and the browser's back button works. `page` is undefined at /super/admin, and
+ * anything unrecognised falls back to the overview (see the Navigate below).
+ */
+const { page } = useParams();
+const tab = page || 'overview';
+const delegated = DELEGATED.find((d) => d.slug === tab) || null;
+const knownPage = TAB_IDS.includes(tab) || Boolean(delegated);
+const goTo = (id) => navigate(`${BASE}/${id}`);
+const setTab = (id) => goTo(id);
 
   const [dashboard, setDashboard] = useState(null);
   const [admins, setAdmins] = useState([]);
@@ -1094,75 +1128,86 @@ function SuperAdminPage() {
           <nav className="space-y-1">
             {TABS.map((tb) => {
               const Icon = tb.icon;
-              const active = tab === tb.id;
+              const active = tab === tb.id && !delegated;
               return (
-                <button
+                <Link
                   key={tb.id}
-                  onClick={() => setTab(tb.id)}
+                  to={`${BASE}/${tb.id}`}
+                  aria-current={active ? 'page' : undefined}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? 'bg-[#A80808]/10 text-[#A80808]' : 'text-ink-soft hover:bg-gray-50'}`}
                 >
                   <Icon size={17} /> {t[tb.key] || tb.label}
-                </button>
+                </Link>
+              );
+            })}
+            {/* The super-admin-only admin pages, reachable from here without leaving. */}
+            {DELEGATED.map((d) => {
+              const Icon = d.icon;
+              const active = delegated?.slug === d.slug;
+              return (
+                <Link
+                  key={d.slug}
+                  to={`${BASE}/${d.slug}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? 'bg-[#A80808]/10 text-[#A80808]' : 'text-ink-soft hover:bg-gray-50'}`}
+                >
+                  <Icon size={17} /> {t[d.labelKey] || d.label}
+                </Link>
               );
             })}
           </nav>
 
+          {/* An unknown or mistyped address goes to the overview rather than a blank page. */}
+          {!knownPage && <Navigate to={`${BASE}/overview`} replace />}
+
           {/*
-            Only the pages a super administrator alone may open. The rest of the
-            admin panel already has its own sidebar, and repeating all
-            thirty-odd pages here would mean a second list to keep in step; this
-            console links to what it does not already have. Read from
-            `getSuperAdminOnlyItems`, which is the same list the route guard and
-            the admin sidebar are built from.
+            The super-admin-only admin pages used to sit in a second list down here,
+            each one bouncing out to /admin/... and losing this console on the way.
+            They are now entries in the list above (DELEGATED), so the separate
+            "Super admin pages" section is gone - every one of those pages is
+            reachable without leaving, and none is listed twice.
           */}
-          <div className="mt-6 border-t border-gray-100 pt-3">
-            <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-mute">
-              {t.a6_superOnlyPages || 'Super admin pages'}
-            </p>
-            <nav className="space-y-0.5">
-              {getSuperAdminOnlyItems(t, user).map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.key}
-                    to={`/admin/${item.key}`}
-                    className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-gray-50 hover:text-ink"
-                  >
-                    <Icon size={16} className="shrink-0 text-mute" aria-hidden="true" />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
         </aside>
 
         {/* Mobile tab bar */}
         <div className="md:hidden overflow-x-auto bg-white border-b border-gray-100 p-2">
           <div className="flex gap-2">
-            {TABS.map((tb) => {
+            {[...TABS, ...DELEGATED].map((tb) => {
               const Icon = tb.icon;
-              const active = tab === tb.id;
+              const id = tb.id || tb.slug;
+              const active = tab === id;
               return (
-                <button key={tb.id} onClick={() => setTab(tb.id)}
+                <Link key={id} to={`${BASE}/${id}`}
                   className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold ${active ? 'bg-[#A80808] text-white' : 'bg-gray-100 text-ink-soft'}`}>
-                  <Icon size={14} /> {t[tb.key] || tb.label}
-                </button>
+                  <Icon size={14} /> {t[tb.key || tb.labelKey] || tb.label}
+                </Link>
               );
             })}
           </div>
         </div>
 
         <main className="p-6 flex-1 min-w-0">
-          {tab === 'overview' && renderOverview()}
-          {tab === 'admins' && renderAdmins()}
-          {tab === 'bookings' && renderBookings()}
-          {tab === 'donations' && renderDonations()}
-          {tab === 'media' && renderMedia()}
-          {tab === 'languages' && renderLanguages()}
-          {tab === 'maintenance' && renderMaintenance()}
-          {tab === 'logs' && renderLogs()}
-          {tab === 'database' && renderDatabase()}
+          {/*
+            A page this console does not have goes back to the overview, so an old or
+            mistyped bookmark lands somewhere useful instead of a blank screen.
+          */}
+          {!knownPage && <Navigate to={`${BASE}/overview`} replace />}
+          {knownPage && !delegated && tab === 'overview' && renderOverview()}
+          {knownPage && !delegated && tab === 'admins' && renderAdmins()}
+          {knownPage && !delegated && tab === 'bookings' && renderBookings()}
+          {knownPage && !delegated && tab === 'donations' && renderDonations()}
+          {knownPage && !delegated && tab === 'media' && renderMedia()}
+          {knownPage && !delegated && tab === 'languages' && renderLanguages()}
+          {knownPage && !delegated && tab === 'maintenance' && renderMaintenance()}
+          {knownPage && !delegated && tab === 'logs' && renderLogs()}
+          {knownPage && !delegated && tab === 'database' && renderDatabase()}
+
+          {/* The super-admin-only admin pages, mounted here at /super/admin/<slug>. */}
+          {delegated?.slug === 'donationaccount' && <AdminAccount />}
+          {delegated?.slug === 'backupandrestore' && <AdminBackup t={t} />}
+          {delegated?.slug === 'access' && <AdminAccess t={t} />}
+          {delegated?.slug === 'header' && <AdminHeader t={t} />}
+          {delegated?.slug === 'bellsound' && <AdminBell t={t} />}
         </main>
       </div>
     </div>

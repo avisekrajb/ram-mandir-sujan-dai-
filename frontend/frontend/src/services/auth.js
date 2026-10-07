@@ -114,6 +114,32 @@ export const isLoggedIn = () => {
 // Raised on `window` when the server says the saved login is no longer valid.
 export const SESSION_ENDED_EVENT = 'auth:session-ended';
 
+// Raised on `window` when the account is signed in but suspended for a while:
+// the login is still good, the person just may not leave the home page.
+export const ACCOUNT_RESTRICTED_EVENT = 'auth:account-restricted';
+
+// The code the backend uses for that (see middleware/restricted.js).
+export const RESTRICTED_CODE = 'ACCOUNT_RESTRICTED';
+
+/**
+ * Is this signed-in person currently held to the home page? Mirrors the server
+ * rule: suspended, and the suspension has an end time that has not passed yet.
+ * A suspension with no end time is a lock-out, and the saved login is dropped
+ * instead - see isSessionEndedError.
+ */
+export const isRestrictedUser = (user, now = Date.now()) =>
+  Boolean(
+    user &&
+    user.active === false &&
+    user.role !== 'superadmin' &&
+    user.suspendedUntil &&
+    new Date(user.suspendedUntil).getTime() > now
+  );
+
+/** The API refused a call because of a timed suspension. */
+export const isRestrictedError = (error) =>
+  Boolean(error?.response?.status === 403 && error?.response?.data?.code === RESTRICTED_CODE);
+
 // The auth middleware tags every "this login is over" 401 with one of these.
 // Anything else (a 5xx, a timeout, the backend restarting, a wrong password on
 // the login form) must never cost a person their saved login.

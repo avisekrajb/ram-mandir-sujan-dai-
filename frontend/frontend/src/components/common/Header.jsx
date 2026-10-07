@@ -50,6 +50,10 @@ const Header = ({ onLogout, setAuthModal }) => {
   const tools = useMemo(() => getToolsNav(t), [t]);
   const donate = useMemo(() => getDonateNav(t), [t]);
   const donateCta = useMemo(() => getDonateCta(t), [t]);
+  // Whether the donate link joins the navigation row at desktop widths. English
+  // keeps it out of the row, so for those readers it must stay in "More" at every
+  // width - otherwise it is hidden in both places and the page is unreachable.
+  const donateInRow = useMemo(() => !donateCta.hiddenIn.includes(lang), [donateCta, lang]);
   const moreItems = useMemo(() => primary.filter((item) => MORE_PATHS.includes(item.to)), [primary]);
   const laptopMoreItems = useMemo(() => primary.filter((item) => LAPTOP_MORE_PATHS.includes(item.to)), [primary]);
 
@@ -187,7 +191,7 @@ const Header = ({ onLogout, setAuthModal }) => {
                       readers through "More", the mobile drawer and the footer, so
                       nothing is taken away from them.
                     */}
-                    {item.to === donateCta.after && !donateCta.hiddenIn.includes(lang) && (
+                    {item.to === donateCta.after && donateInRow && (
                       <NavLink
                         to={donateCta.to}
                         onClick={guardProtected(donateCta)}
@@ -202,9 +206,14 @@ const Header = ({ onLogout, setAuthModal }) => {
               <Dropdown label={t.more || 'More'} active={isMoreActive} align="right">
                 {(close) =>
                   [
-                    // The donate button joins the row at 1280px, so below that
-                    // it rides in "More" instead of being missing altogether.
-                    { item: donateCta, laptopOnly: true },
+                    /*
+                      Donate leads the menu, above Book Puja.
+                      `laptopOnly` (hidden from 1280px up) applies only when the
+                      link actually joins the row at that width. For a language
+                      that keeps it out of the row - English - it stays visible at
+                      every width, so it is never hidden in both places at once.
+                    */
+                    { item: donateCta, laptopOnly: donateInRow },
                     ...laptopMoreItems.map((item) => ({ item, laptopOnly: true })),
                     ...moreItems.map((item) => ({ item, laptopOnly: false })),
                   ].map(({ item, laptopOnly }) => (

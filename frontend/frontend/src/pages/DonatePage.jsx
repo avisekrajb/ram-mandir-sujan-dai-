@@ -627,10 +627,9 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
+const [done, setDone] = useState(false);
   const fileRef = useRef(null);
 
-  const tiers = [108, 501, 1100, 2100, 5100, 11000];
 
   // Free the object URL on change/unmount so the preview cannot leak.
   useEffect(() => {
@@ -644,6 +643,8 @@ const DonationProofForm = ({ t, user, amount, setAmount, name, setName, email, s
   }, [screenshot]);
 
   const hasProof = Boolean(screenshot) || Boolean(transactionId.trim());
+
+  const tiers = [108, 501, 1100, 2100, 5100, 11000];
 
   const pickFile = (file) => {
     if (!file) return;
@@ -795,10 +796,7 @@ await api.post('/donations', {
       className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden"
     >
       {/* header */}
-      <div
-        className="relative px-6 sm:px-8 py-6 text-white overflow-hidden"
-        style={{ background: '#820606' }}
-      >
+      <div className="relative px-6 sm:px-8 py-6 text-white overflow-hidden" style={{ background: '#820606' }}>
         <div
           className="absolute -top-16 -right-10 w-56 h-56 rounded-full opacity-15"
           style={{ background: 'radial-gradient(circle, #E2DBD8 0%, transparent 70%)' }}
@@ -809,12 +807,12 @@ await api.post('/donations', {
           </div>
           <div className="min-w-0">
             <h2 className={`font-serif ${showHeading ? 'text-2xl sm:text-3xl' : 'text-lg'}`}>
-{t?.[titleKey] || titleFallback || t?.submitDonationProof || 'Submit Your Donation Proof'}
-               </h2>
-               <p className="text-white/80 text-sm mt-0.5">
-                 {t?.[hintKey] || hintFallback || t?.submitDonationProofHint ||
-                   'Transferred the money already? Send us the screenshot or transaction number and we will verify it.'}
-               </p>
+              {t?.[titleKey] || titleFallback || t?.submitDonationProof || 'Submit Your Donation Proof'}
+            </h2>
+            <p className="text-white/80 text-sm mt-0.5">
+              {t?.[hintKey] || hintFallback || t?.submitDonationProofHint ||
+                'Transferred the money already? Send us the screenshot or transaction number and we will verify it.'}
+            </p>
           </div>
         </div>
       </div>
@@ -836,211 +834,209 @@ await api.post('/donations', {
         )}
 
         {/* Two columns on desktop: details on the left, the proof panel on the
-            right. Stacks to a single column on phones. */}
+            right. The left column takes the larger share - it holds the amount,
+            the four contact boxes and, from ten lakh up, the income and selfie
+            fields, so it needs the room. Stacks to a single column on phones. */}
         <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
-          {/* ---------- Left: amount + contact ---------- */}
-          <div className="lg:col-span-7 space-y-5">
-            {/* Amount */}
-            <div>
-              <p className="text-xs font-medium text-ink-soft mb-3 uppercase tracking-wider">
-                {t?.quickAmounts || 'Quick Amounts'}
-              </p>
-              <div className="grid grid-cols-3 gap-2.5">
-                {tiers.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setAmount(v)}
-                    className="py-3 px-2 rounded-xl border text-sm font-semibold transition-all duration-200 hover:shadow-md"
-                    style={{
-                      background: Number(amount) === v ? '#A80808' : '#fff',
-                      color: Number(amount) === v ? '#fff' : '#333',
-                      borderColor: Number(amount) === v ? '#A80808' : '#e5e5e5',
-                    }}
-                  >
-                    NPR {v.toLocaleString()}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.customAmount || 'Custom Amount'} (NPR)
-                </label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={MAX_DONATION}
-                  value={amount}
-                  onChange={(e) =>
-                    setAmount(e.target.value === '' ? '' : Number(e.target.value))
-                  }
-                  // Same widening as the main amount field, so the two do not
-                  // behave differently: this form has its own input, not that one.
-style={{ width: `${amountFieldWidth(amount)}%` }}
-                  className={`${inputClass} max-w-full transition-[width] duration-200 ease-out`}
-                  placeholder={t?.enterAmount || 'Enter amount'}
-                  autoComplete="off"
-                />
-                {/*
-                  The figure in words, as on a cheque, so a large transfer can be
-                  checked against what the bank actually shows. Same helper as the
-                  main form, from one lakh up, updating as the digits change.
-                */}
-                {amountInWords(amount) && (
-                  <p role="status" className="mt-1.5 text-xs font-medium text-[#A80808]">
-                    {amountInWords(amount)}
-                  </p>
-                )}
-              </div>
+        {/* ---------- Left: amount + contact ---------- */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-5 min-w-0">
+          {/* Amount */}
+          <div>
+            <p className="text-xs font-medium text-ink-soft mb-3 uppercase tracking-wider">
+              {t?.quickAmounts || 'Quick Amounts'}
+            </p>
+            <div className="grid grid-cols-3 gap-2.5">
+              {tiers.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setAmount(v)}
+                  className="py-3 px-2 rounded-xl border text-sm font-semibold transition-all duration-200 hover:shadow-md"
+                  style={{
+                    background: Number(amount) === v ? '#A80808' : '#fff',
+                    color: Number(amount) === v ? '#fff' : '#333',
+                    borderColor: Number(amount) === v ? '#A80808' : '#e5e5e5',
+                  }}
+                >
+                  NPR {v.toLocaleString()}
+                </button>
+              ))}
             </div>
 
-            {/* Contact */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="min-w-0">
-                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.yourName || 'Your Name'} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={inputClass}
-                  placeholder={t?.yourName || 'Your Name'}
-                  required
-                
-      autoComplete="off"/>
-              </div>
-<div className="min-w-0">
-                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.yourEmail || 'Your Email'} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                  placeholder="your@email.com"
-                  required
-                  autoComplete="off"/>
-                {/* Says where this address is used, so nobody is surprised by
-                    mail from the temple later. */}
-                <p className="mt-1.5 text-xs text-mute leading-relaxed">
-                  {t?.donateEmailHint ||
-                    'The receipt and any update about this donation are sent to this address.'}
+            <div className="mt-4">
+              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                {t?.customAmount || 'Custom Amount'} (NPR)
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_DONATION}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                // Same widening as the main amount field, so the two do not
+                // behave differently: this form has its own input, not that one.
+                style={{ width: `${amountFieldWidth(amount)}%` }}
+                className={`${inputClass} max-w-full transition-[width] duration-200 ease-out`}
+                placeholder={t?.enterAmount || 'Enter amount'}
+                autoComplete="off"
+              />
+              {/* The figure in words, as on a cheque, so a large transfer can be
+                  checked against what the bank actually shows. */}
+              {amountInWords(amount) && (
+                <p role="status" className="mt-1.5 text-xs font-medium text-[#A80808]">
+                  {amountInWords(amount)}
                 </p>
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="min-w-0">
-<label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.phoneNumber || 'Phone Number'} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={inputClass}
-                  placeholder="98XXXXXXXX"
-                  required
-                  autoComplete="off"/>
-              </div>
-<div className="min-w-0">
-                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                  {t?.message || 'Message'} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className={inputClass}
-                  placeholder={t?.messagePlaceholder || 'Your message...'}
-                  required
-                  autoComplete="off"/>
-              </div>
-            </div>
-
-            {/*
-                The declared sources of income and the donor's own photograph:
-                the same fields the online form asks for, so a bank transfer is
-                recorded in the same shape and the admin panel shows one kind of
-                record rather than two. Shown only from ten lakh up, exactly as on
-                the online form.
-              */}
-              {needsDeclaredIncome(amount) && (
-                <>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="proof-employment" className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                        {t?.a1_donEmployment || 'Salary / Employment'} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        id="proof-employment"
-                        type="text"
-                        value={employment || ''}
-                        onChange={(e) => setEmployment?.(e.target.value)}
-                        className={inputClass}
-                        placeholder={t?.a1_donEmploymentPh || 'e.g. Teacher, or Government Service'}
-                        required
-                        autoComplete="off"/>
-                    </div>
-                    <div>
-                      <label htmlFor="proof-business" className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                        {t?.a1_donBusiness || 'Business Income'} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        id="proof-business"
-                        type="text"
-                        value={businessIncome || ''}
-                        onChange={(e) => setBusinessIncome?.(e.target.value)}
-                        className={inputClass}
-                        placeholder={t?.a1_donBusinessPh || 'e.g. Shop, or Farm'}
-                        required
-                        autoComplete="off"/>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                      {t?.a1_donPhotoLabel || 'Your Photograph'} <span className="text-red-500">*</span>
-                    </label>
-                    {/*
-                      The same selfie capture as the online form, including the
-                      five-second automatic capture. There is no file picker, so the
-                      photograph cannot be one taken from somewhere else.
-                    */}
-                    <SelfieCapture
-                      photoUrl={photo || ''}
-                      onChange={(url) => setPhoto?.(url)}
-                      t={t}
-                    />
-                  </div>
-                </>
               )}
             </div>
-
-          {/* ---------- Right: the proof panel ---------- */}
-          <div className="lg:col-span-5">
-            {/* ---- Proof: screenshot OR transaction number ---- */}
-            <div className="h-full rounded-2xl border-2 border-dashed border-gray-200 p-5 bg-gray-50/60 flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck size={16} className="text-[#A80808] flex-shrink-0" />
-                <p className="text-sm font-bold text-gray-800 min-w-0">
-              {t?.paymentProof || 'Payment Proof'}
-              <span className="text-red-500"> *</span>
-            </p>
           </div>
-          <p className="text-xs text-gray-500 mb-4">
-            {t?.proofRequiredHint ||
-              'Upload the payment screenshot or type the transaction number. At least one is required.'}
-          </p>
 
-          {/* Stacked, not side by side: this column is narrower on desktop and
-              stacked also keeps the upload target large on phones. */}
-          <div className="space-y-4">
-            {/* Screenshot upload */}
-            <div>
+          {/* Contact */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                {t?.yourName || 'Your Name'} <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputClass}
+                placeholder={t?.yourName || 'Your Name'}
+                required
+                autoComplete="off"
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                {t?.yourEmail || 'Your Email'} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+                placeholder="your@email.com"
+                required
+                autoComplete="off"
+              />
+              {/* Says where this address is used, so nobody is surprised by
+                  mail from the temple later. */}
+              <p className="mt-1.5 text-xs text-mute leading-relaxed">
+                {t?.donateEmailHint ||
+                  'The receipt and any update about this donation are sent to this address.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                {t?.phoneNumber || 'Phone Number'} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={inputClass}
+                placeholder="98XXXXXXXX"
+                required
+                autoComplete="off"
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                {t?.message || 'Message'} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className={inputClass}
+                placeholder={t?.messagePlaceholder || 'Your message...'}
+                required
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {/* The declared sources of income and the donor's own photograph: the
+              same fields the online form asks for, so a bank transfer is recorded
+              in the same shape and the admin panel shows one kind of record rather
+              than two. Shown only from ten lakh up, exactly as on the online form. */}
+          {needsDeclaredIncome(amount) && (
+            <>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="proof-employment"
+                    className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider"
+                  >
+                    {t?.a1_donEmployment || 'Salary / Employment'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="proof-employment"
+                    type="text"
+                    value={employment || ''}
+                    onChange={(e) => setEmployment?.(e.target.value)}
+                    className={inputClass}
+                    placeholder={t?.a1_donEmploymentPh || 'e.g. Teacher, or Government Service'}
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="proof-business"
+                    className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider"
+                  >
+                    {t?.a1_donBusiness || 'Business Income'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="proof-business"
+                    type="text"
+                    value={businessIncome || ''}
+                    onChange={(e) => setBusinessIncome?.(e.target.value)}
+                    className={inputClass}
+                    placeholder={t?.a1_donBusinessPh || 'e.g. Shop, or Farm'}
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                  {t?.a1_donPhotoLabel || 'Your Photograph'} <span className="text-red-500">*</span>
+                </label>
+                {/* The same selfie capture as the online form, including the
+                    five-second automatic capture. There is no file picker, so the
+                    photograph cannot be one taken from somewhere else. */}
+                <SelfieCapture photoUrl={photo || ''} onChange={(url) => setPhoto?.(url)} t={t} />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ---------- Right: the proof panel ---------- */}
+        <div className="lg:col-span-5 xl:col-span-5 min-w-0">
+          {/* Proof: screenshot OR transaction number */}
+          <div className="h-full rounded-2xl border-2 border-dashed border-gray-200 p-5 bg-gray-50/60 flex flex-col">
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck size={16} className="text-[#A80808] flex-shrink-0" />
+              <p className="text-sm font-bold text-gray-800 min-w-0">
+                {t?.paymentProof || 'Payment Proof'}
+                <span className="text-red-500"> *</span>
+              </p>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              {t?.proofRequiredHint ||
+                'Upload the payment screenshot or type the transaction number. At least one is required.'}
+            </p>
+
+            {/* Stacked, not side by side: this column is narrower on desktop and
+                stacked also keeps the upload target large on phones. */}
+            <div className="space-y-4">
+              {/* Screenshot upload */}
               <div
                 role="button"
                 tabIndex={0}
@@ -1092,9 +1088,7 @@ style={{ width: `${amountFieldWidth(amount)}%` }}
                       {t?.uploadScreenshot || 'Upload Screenshot'}
                     </p>
                     <p className="text-xs">{t?.dropImageHere || 'Drop the image here'}</p>
-                    <p className="text-xs text-gray-300">
-                      {t?.fileHint || 'JPG / PNG / WEBP • max 5MB'}
-                    </p>
+                    <p className="text-xs text-gray-300">{t?.fileHint || 'JPG / PNG / WEBP • max 5MB'}</p>
                   </div>
                 )}
 
@@ -1112,119 +1106,112 @@ style={{ width: `${amountFieldWidth(amount)}%` }}
                   </button>
                 )}
               </div>
-            </div>
 
-            {/* Transaction number */}
-            <div>
-              <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
-                {t?.transactionNumber || 'Transaction Number'}
-              </label>
-              <input
-                type="text"
-                value={transactionId}
-                onChange={(e) => {
-                  setTransactionId(e.target.value);
-                  if (e.target.value.trim()) setError('');
-                }}
-                className={`${inputClass} font-mono tracking-wide`}
-                placeholder={t?.transactionNumberPlaceholder || 'e.g. 0C1234XYZ9876'}
-              
-      autoComplete="off"/>
-              <p className="text-xs text-gray-400 mt-1.5">
-                {t?.transactionNumberHint ||
-                  'From your eSewa / Khalti / bank confirmation SMS or receipt.'}
-              </p>
-
-              {/* which of the two we have */}
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`w-4 h-4 rounded-full grid place-items-center flex-shrink-0 ${
-                      screenshot ? 'bg-[#A80808] text-white' : 'bg-gray-200 text-gray-400'
-                    }`}
-                  >
-                    {screenshot ? <Check size={11} /> : <X size={11} />}
-                  </span>
-                  <span className={screenshot ? 'text-[#A80808] font-semibold' : 'text-gray-400'}>
-                    {t?.screenshot || 'Screenshot'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`w-4 h-4 rounded-full grid place-items-center flex-shrink-0 ${
-                      transactionId.trim()
-                        ? 'bg-[#A80808] text-white'
-                        : 'bg-gray-200 text-gray-400'
-                    }`}
-                  >
-                    {transactionId.trim() ? <Check size={11} /> : <X size={11} />}
-                  </span>
-                  <span
-                    className={
-                      transactionId.trim() ? 'text-[#A80808] font-semibold' : 'text-gray-400'
-                    }
-                  >
-                    {t?.transactionNumber || 'Transaction Number'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-              {error && (
-                <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-3.5 py-3 text-xs text-red-700">
-                  <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-                  <span className="break-words">{error}</span>
-                </div>
-              )}
-
-              {!user && (
-                <p className="text-xs text-ink-soft flex items-start gap-1.5 mt-4">
-                  <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
-                  <span>{t?.loginRequiredDonate || 'Please login to record your donation'}</span>
+              {/* Transaction number */}
+              <div>
+                <label className="block text-xs font-medium text-ink-soft mb-1.5 uppercase tracking-wider">
+                  {t?.transactionNumber || 'Transaction Number'}
+                </label>
+                <input
+                  type="text"
+                  value={transactionId}
+                  onChange={(e) => {
+                    setTransactionId(e.target.value);
+                    if (e.target.value.trim()) setError('');
+                  }}
+                  className={`${inputClass} font-mono tracking-wide`}
+                  placeholder={t?.transactionNumberPlaceholder || 'e.g. 0C1234XYZ9876'}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-400 mt-1.5">
+                  {t?.transactionNumberHint ||
+                    'From your eSewa / Khalti / bank confirmation SMS or receipt.'}
                 </p>
-              )}
 
-              {/* Actions sit inside the right column so the button lines up with
-                  the proof panel on desktop. */}
-              <div className="flex flex-wrap items-center gap-3 mt-5 pt-5 border-t border-gray-200">
-                <button
-                  type="submit"
-                  disabled={submitting || done}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50"
-                  style={{ background: '#A80808' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#660505';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#A80808';
-                  }}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      {t?.submitting || 'Submitting...'}
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      {t?.submitProof || 'Submit Donation Proof'}
-                    </>
-                  )}
-                </button>
-
-                {(screenshot || transactionId) && !done && (
-                  <button
-                    type="button"
-                    onClick={clearAll}
-                    className="px-4 py-3.5 text-sm font-semibold text-ink-soft border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
-                  >
-                    {t?.clear || 'Clear'}
-                  </button>
-                )}
+                {/* which of the two we have */}
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span
+                      className={`w-4 h-4 rounded-full grid place-items-center flex-shrink-0 ${
+                        screenshot ? 'bg-[#A80808] text-white' : 'bg-gray-200 text-gray-400'
+                      }`}
+                    >
+                      {screenshot ? <Check size={11} /> : <X size={11} />}
+                    </span>
+                    <span className={screenshot ? 'text-[#A80808] font-semibold' : 'text-gray-400'}>
+                      {t?.screenshot || 'Screenshot'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span
+                      className={`w-4 h-4 rounded-full grid place-items-center flex-shrink-0 ${
+                        transactionId.trim() ? 'bg-[#A80808] text-white' : 'bg-gray-200 text-gray-400'
+                      }`}
+                    >
+                      {transactionId.trim() ? <Check size={11} /> : <X size={11} />}
+                    </span>
+                    <span className={transactionId.trim() ? 'text-[#A80808] font-semibold' : 'text-gray-400'}>
+                      {t?.transactionNumber || 'Transaction Number'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {error && (
+              <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-3.5 py-3 text-xs text-red-700">
+                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                <span className="break-words">{error}</span>
+              </div>
+            )}
+
+            {!user && (
+              <p className="text-xs text-ink-soft flex items-start gap-1.5 mt-4">
+                <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+                <span>{t?.loginRequiredDonate || 'Please login to record your donation'}</span>
+              </p>
+            )}
+
+            {/* Actions sit inside the right column so the button lines up with
+                the proof panel on desktop. */}
+            <div className="flex flex-wrap items-center gap-3 mt-5 pt-5 border-t border-gray-200">
+              <button
+                type="submit"
+                disabled={submitting || done}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50"
+                style={{ background: '#A80808' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#660505';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#A80808';
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    {t?.submitting || 'Submitting...'}
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} />
+                    {t?.submitProof || 'Submit Donation Proof'}
+                  </>
+                )}
+              </button>
+
+              {(screenshot || transactionId) && !done && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="px-4 py-3.5 text-sm font-semibold text-ink-soft border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  {t?.clear || 'Clear'}
+                </button>
+              )}
+            </div>
           </div>
+        </div>
         </div>
       </div>
     </form>
@@ -1801,14 +1788,22 @@ const requiredFields = useMemo(
           the left; the Donation Proof form takes the 70% on the right.
           ================================================================ */}
       {accountOnlyMode && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-24">
-          <div className="grid lg:grid-cols-10 gap-6 lg:gap-7 items-start">
-            {/* ---------- Left: 30% (slides in after the proof form) ---------- */}
+        /*
+         * The proof form is two columns of its own, so it needs the width: at the
+         * old 7-of-10 the outer panel squeezed it and its left column came out
+         * narrower than its own right-hand side, which is what made the amount and
+         * contact boxes look cut in. The account details keep their 3 columns and
+         * the form gets 9 from 1280px up, then 8 at large screens and the full
+         * width on a phone.
+         */
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-24">
+          <div className="grid lg:grid-cols-12 gap-6 lg:gap-7 items-start">
+            {/* ---------- Left: the bank details (slides in after the form) ---------- */}
             <motion.div
               initial={{ opacity: 0, x: -48 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.55, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-3 space-y-4 lg:sticky lg:top-28"
+              className="lg:col-span-3 xl:col-span-3 space-y-4 lg:sticky lg:top-28"
             >
               <DonationAccountDetails
                 variant="mini"
@@ -1848,9 +1843,9 @@ const requiredFields = useMemo(
               initial={{ opacity: 0, x: 48 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:col-span-7"
+              className="lg:col-span-9 xl:col-span-9"
             >
-<DonationProofForm
+              <DonationProofForm
                 t={t}
                 user={user}
                 amount={amount}

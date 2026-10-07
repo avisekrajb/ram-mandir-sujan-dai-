@@ -1,6 +1,6 @@
 import {
   Activity, Bell, BellRing, BookOpen, Briefcase, CalendarDays, ClipboardList, Clock, Cloud, Database, Facebook, FileText,
-  Flame, Gift, History, Home, Image, Info, Landmark, LayoutDashboard, Mail, Megaphone, MonitorPlay, PanelBottom, PanelTop, PenLine,
+  Flame, Gift, History, Home, Image, Info, Landmark, LayoutDashboard, Mail, Megaphone, PanelBottom, PanelTop, PenLine,
   Quote, Radio, ScrollText, Send, Settings, Share2, ShieldCheck, SlidersHorizontal, Star, Stamp, UserCog, Users,
   UsersRound,
 } from 'lucide-react';
@@ -55,7 +55,9 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
       items: [
         { key: 'bookings', label: t.manageBooking || 'Bookings', icon: ClipboardList },
         // Public bookings from the Events page, with the price list (area: bookings).
-        { key: 'bookings/manage', label: t.tb_navLabel || 'Booking management', icon: CalendarDays },
+        // The separate "Booking management" screen is gone. Admin -> Bookings now
+        // covers the puja list and the price list in one place, and the wording of
+        // the page is on Booking Page Content below.
         // The wording of the booking page itself (area: bookings, same as the list).
         // PenLine, not FileText: that icon already belongs to the Content section
         // and every sidebar item is meant to have an icon of its own.
@@ -90,7 +92,8 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
         // Header, Backups and Bell sound are super-admin only (see SUPER_ONLY_PAGES
         // in AdminPage); they are dropped from an ordinary admin's sidebar here.
         ...(isSuperAdmin ? [{ key: 'header', label: t.a1_headerNavLabel || 'Header', icon: PanelTop }] : []),
-        { key: 'hero', label: t.heroBanner || 'Hero Banner', icon: MonitorPlay },
+        // The hero banner - photo/video plus the text over it - is part of the
+        // Home page now, so there is no separate Hero entry to keep in step.
         // Live Puja: the YouTube channel and the fallback video (area: content).
         { key: 'live-puja', label: t.a1_livePujaNavLabel || 'Live Puja', icon: Radio },
         { key: 'quote', label: t.dailyQuote || 'Daily Quote', icon: Quote },

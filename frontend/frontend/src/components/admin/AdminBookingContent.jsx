@@ -5,16 +5,28 @@ import api from '../../services/api';
 import OmLoader from '../common/OmLoader';
 import { Toggle } from './kit/kit';
 import { LANGS, TEXT_GROUPS, ALL_TEXT_KEYS } from '../../data/bookingPageText';
+import { BOOKING_PAGE_LABELS } from '../../data/bookingPageLabels';
+
+/** The wording the booking page shows for this field in this language. */
+const builtinFor = (key, code) => {
+  const byLang = BOOKING_PAGE_LABELS[code] || BOOKING_PAGE_LABELS.en;
+  return byLang?.[key] || BOOKING_PAGE_LABELS.en?.[key] || '';
+};
 
 /*
- * Every field arrives empty, which the booking page reads as "not overridden" and
- * falls back to the wording it ships with. So this page starts blank and blank
- * keeps working; an administrator types only what they want changed.
+ * Every field starts on the wording the booking page already shows, so an
+ * administrator edits the real sentence rather than an empty box they have to
+ * reconstruct. It is prefilled as a starting point only - anything left untouched
+ * is pruned on save (see `prune`), so the page keeps its built-in wording and
+ * nothing redundant is stored. That matters because these built-in strings live
+ * in the code: storing a copy of every one of them would freeze today's wording
+ * into the database, and a later improvement to the page would never reach the
+ * site.
  */
 const blankBucket = (group) =>
   group.fields.reduce((acc, { key }) => {
     acc[key] = LANGS.reduce((a, [code]) => {
-      a[code] = '';
+      a[code] = builtinFor(key, code);
       return a;
     }, {});
     return acc;
@@ -26,7 +38,11 @@ const emptyForm = () =>
     return acc;
   }, { enabled: true });
 
-/** Merge what the server sent over the blanks, so a group added later still appears. */
+/**
+ * Merge what the server sent over the built-in wording, so a group added later
+ * still appears. A line the server has is the override and wins; a line it does
+ * not have keeps the wording the page already shows.
+ */
 const hydrate = (saved) => {
   const form = emptyForm();
   if (!saved) return form;
@@ -45,14 +61,23 @@ const hydrate = (saved) => {
   return form;
 };
 
-/** Drop the fields nobody filled in, so the saved document stays small. */
+/**
+ * Store only the lines that actually differ from the built-in wording.
+ *
+ * A field still holding its built-in text is dropped, so the saved document holds
+ * genuine overrides and nothing else. An empty line is dropped too - that is the
+ * booking page's own signal to fall back to the wording it ships with.
+ */
 const prune = (form) => {
   const out = { enabled: form.enabled !== false };
   TEXT_GROUPS.forEach((group) => {
     const bucket = {};
     group.fields.forEach(({ key }) => {
       const values = form[group.id][key];
-      const filled = LANGS.filter(([code]) => (values[code] || '').trim());
+      const filled = LANGS.filter(([code]) => {
+        const typed = (values[code] || '').trim();
+        return typed && typed !== builtinFor(key, code).trim();
+      });
       if (filled.length) bucket[key] = Object.fromEntries(filled.map(([code]) => [code, values[code].trim()]));
     });
     out[group.id] = bucket;
@@ -76,6 +101,10 @@ const prune = (form) => {
 const AdminBookingContent = ({ t = {} }) => {
   const { showToast } = useToast();
   const [form, setForm] = useState(null);
+  // The lines an administrator has typed in. This is what tells "never touched,
+  // still showing the built-in wording" from "edited and then typed back to
+  // exactly the original" - only the second is worth offering a revert for.
+  const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -99,11 +128,25 @@ const AdminBookingContent = ({ t = {} }) => {
     return () => { alive = false; };
   }, [t]);
 
-  const setValue = (groupId, key, code, value) =>
+  const setValue = (groupId, key, code, value) => {
+    setTouched((prev) => ({ ...prev, [`${groupId}.${key}.${code}`]: true }));
     setForm((f) => {
       setDirty(true);
       return { ...f, [groupId]: { ...f[groupId], [key]: { ...f[groupId][key], [code]: value } } };
     });
+  };
+
+  /** Put one line back to the wording the booking page ships with. */
+  const revertOne = (groupId, key, code) => {
+    setTouched((prev) => ({ ...prev, [`${groupId}.${key}.${code}`]: false }));
+    setForm((f) => {
+      setDirty(true);
+      return {
+        ...f,
+        [groupId]: { ...f[groupId], [key]: { ...f[groupId][key], [code]: builtinFor(key, code) } },
+      };
+    });
+  };
 
   const save = async () => {
     setBusy(true);
@@ -120,18 +163,28 @@ const AdminBookingContent = ({ t = {} }) => {
     }
   };
 
-  const clearAll = () => {
-    if (!window.confirm(t?.a1_bpcClearConfirm || 'Clear every saved line? The page will go back to its built-in wording.')) return;
+  /**
+   * Put every line back to the wording the booking page ships with. This is the
+   * old "Clear all", renamed for what it now does - the fields stay filled with
+   * the seeded wording, they are simply no longer overrides.
+   */
+  const revertAll = () => {
+    if (!window.confirm(t?.a1_bpcClearConfirm || 'Revert every line to the wording the booking page uses?')) return;
     setForm(emptyForm());
+    setTouched({});
     setDirty(true);
   };
 
-  const filledCount = useMemo(() => {
+  /** Lines that differ from the built-in wording - these are the ones being saved. */
+  const changedCount = useMemo(() => {
     if (!form) return 0;
     let n = 0;
     TEXT_GROUPS.forEach((g) =>
       g.fields.forEach(({ key }) => {
-        if (LANGS.some(([code]) => (form[g.id][key][code] || '').trim())) n += 1;
+        if (LANGS.some(([code]) => {
+          const typed = (form[g.id][key][code] || '').trim();
+          return typed && typed !== builtinFor(key, code).trim();
+        })) n += 1;
       })
     );
     return n;
@@ -154,7 +207,7 @@ const AdminBookingContent = ({ t = {} }) => {
         </h2>
         <p className="mt-1 text-sm text-ink-soft">
           {t?.a1_bpcHint ||
-            'Every line of wording on the booking page: the heading, the form labels, the buttons and the messages. Leave a line empty to keep the wording it already has.'}
+            'Every line of wording on the booking page: the heading, the form labels, the buttons and the messages. Each box starts with the wording the page shows now — edit it to change it, or leave it and the page keeps using it.'}
         </p>
       </div>
 
@@ -163,7 +216,7 @@ const AdminBookingContent = ({ t = {} }) => {
         <Info size={14} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
         <span>
           {t?.a1_bpcSectionsHint ||
-            'The section titles, paragraphs and bullet points on that page are edited on Admin → Bookings, under “Booking page sections”. This page is the wording of the page itself.'}
+            'Only the lines you change are saved. A box left as it is keeps the wording built into the booking page, so a later improvement to the page still reaches visitors.'}
         </span>
       </p>
 
@@ -208,7 +261,9 @@ const AdminBookingContent = ({ t = {} }) => {
                   <span className="ml-2 text-[11px] font-normal text-mute">{field.key}</span>
                 </legend>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {LANGS.map(([code, name]) => (
+                  {LANGS.map(([code, name]) => {
+                    const isChanged = Boolean(touched[`${group.id}.${field.key}.${code}`]);
+                    return (
                     <div key={code}>
                       <label className="sr-only" htmlFor={`${group.id}-${field.key}-${code}`}>
                         {`${t?.[field.labelKey] || field.fallback} — ${name}`}
@@ -218,12 +273,25 @@ const AdminBookingContent = ({ t = {} }) => {
                         rows={2}
                         value={form[group.id][field.key][code] || ''}
                         onChange={(e) => setValue(group.id, field.key, code, e.target.value)}
-                        placeholder={t?.[field.labelKey] || field.fallback}
-                        className="w-full resize-y rounded-lg border border-[#8F8685] bg-white px-3 py-2 text-sm text-ink placeholder:text-mute focus:border-vermilion focus:outline-none focus:ring-2 focus:ring-vermilion/15"
+                        className={`w-full resize-y rounded-lg border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-vermilion/15 ${
+                          isChanged ? 'border-vermilion/50' : 'border-[#8F8685]'
+                        }`}
                       />
-                      <p className="mt-1 text-[11px] text-mute">{name}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="text-[11px] text-mute">{name}</p>
+                        {isChanged && (
+                          <button
+                            type="button"
+                            onClick={() => revertOne(group.id, field.key, code)}
+                            className="text-[11px] font-semibold text-vermilion hover:underline"
+                          >
+                            {t?.a1_bpcRevertOne || 'Use original'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </fieldset>
             ))}
@@ -233,17 +301,17 @@ const AdminBookingContent = ({ t = {} }) => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-mute">
-          {(t?.a1_bpcCount || '{done} of {total} lines saved').replace('{done}', String(filledCount)).replace('{total}', String(ALL_TEXT_KEYS.length))}
+          {(t?.a1_bpcCount || '{done} of {total} lines changed').replace('{done}', String(changedCount)).replace('{total}', String(ALL_TEXT_KEYS.length))}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={clearAll}
-            disabled={busy || filledCount === 0}
+            onClick={revertAll}
+            disabled={busy || changedCount === 0}
             className="inline-flex min-h-[2.75rem] items-center gap-2 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             <RotateCcw size={15} aria-hidden="true" />
-            {t?.a1_bpcClearAll || 'Clear all'}
+            {t?.a1_bpcClearAll || 'Revert all'}
           </button>
           <button
             type="button"

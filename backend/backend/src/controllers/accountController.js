@@ -19,6 +19,7 @@ const Booking = require('../models/Booking');
 const Donation = require('../models/Donation');
 const AdminLog = require('../models/AdminLog');
 const { AREAS, hasArea } = require('../middleware/permissions');
+const { suspensionEnd, SUSPENSION_OPTIONS } = require('../utils/suspension');
 const { logAdminActivity } = require('./adminController');
 const { passwordProblem } = require('../utils/passwordPolicy');
 
@@ -43,6 +44,8 @@ const toAccount = (u, viewer, extra = {}) => {
     isGoogleUser: !!o.isGoogleUser,
     suspendedReason: o.suspendedReason || '',
     suspendedAt: o.suspendedAt || null,
+    // When a timed suspension lifts; null means it runs until an admin lifts it.
+    suspendedUntil: o.suspendedUntil || null,
     lastLoginAt: o.lastLoginAt || null,
     loginCount: o.loginCount || 0,
     mustChangePassword: !!o.mustChangePassword,
@@ -190,7 +193,17 @@ exports.listAccounts = async (req, res) => {
       })
     );
 
-    res.json({ success: true, data, total, page, pages: Math.max(Math.ceil(total / limit), 1), limit });
+    // The suspension lengths the server accepts, so the panel's choices and the
+    // server's rules cannot drift apart.
+    res.json({
+      success: true,
+      data,
+      total,
+      page,
+      pages: Math.max(Math.ceil(total / limit), 1),
+      limit,
+      suspensionOptions: SUSPENSION_OPTIONS,
+    });
   } catch (error) {
     console.error('List accounts error:', error);
     fail(res, 500, 'Server error');
@@ -412,7 +425,12 @@ exports.updateAccount = async (req, res) => {
   }
 };
 
-// PUT /api/admin/accounts/:id/status   { active, reason? }
+// PUT /api/admin/accounts/:id/status   { active, reason?, duration? }
+//
+// `duration` chooses how long a suspension lasts: 'h24' (24 hours), 'd5' (5 days),
+// 'd10' (10 days), or 'forever'/absent for "until an admin lifts it". A timed
+// suspension still lets the person sign in but holds them to the home page; see
+// middleware/restricted.js.
 exports.setStatus = async (req, res) => {
   try {
     if (typeof req.body?.active !== 'boolean') return fail(res, 400, 'active must be true or false');
@@ -420,17 +438,31 @@ exports.setStatus = async (req, res) => {
     if (!target) return;
     const active = req.body.active;
 
-    target.active = active;
     if (active) {
+      target.active = true;
       target.suspendedReason = '';
       target.suspendedAt = null;
+      target.suspendedUntil = null;
     } else {
+      const until = suspensionEnd(req.body.duration);
+      if (until === undefined) {
+        return fail(res, 400, 'Unknown suspension length. Use h24, d5, d10 or "forever".');
+      }
+      target.active = false;
       target.suspendedReason = String(req.body.reason || '').trim().slice(0, 300);
       target.suspendedAt = new Date();
-      target.revokeSessions(true); // takes effect immediately, not at next token expiry
+      target.suspendedUntil = until;
+      // A timed suspension keeps its session - that is the point of it. Only an
+      // open-ended lock-out signs the person out everywhere.
+      if (!until) target.revokeSessions(true);
     }
     await target.save();
-    audit(req, active ? 'Account Reactivated' : 'Account Suspended', target, active ? {} : { reason: target.suspendedReason });
+    audit(
+      req,
+      active ? 'Account Reactivated' : 'Account Suspended',
+      target,
+      active ? {} : { reason: target.suspendedReason, until: target.suspendedUntil }
+    );
     res.json({ success: true, data: toAccount(target, req.user) });
   } catch (error) {
     console.error('Set status error:', error);
@@ -555,7 +587,7 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-// POST /api/admin/accounts/bulk   { ids: [], action: 'suspend' | 'activate' | 'delete', reason? }
+// POST /api/admin/accounts/bulk   { ids: [], action: 'suspend' | 'activate' | 'delete', reason?, duration? }
 // Ordinary users only; anything else in the selection is skipped and reported.
 exports.bulkAction = async (req, res) => {
   try {
@@ -563,6 +595,14 @@ exports.bulkAction = async (req, res) => {
     if (!Array.isArray(ids) || !ids.length) return fail(res, 400, 'Select at least one account');
     if (ids.length > 200) return fail(res, 400, 'Select at most 200 accounts at a time');
     if (!['suspend', 'activate', 'delete'].includes(action)) return fail(res, 400, 'Unknown action');
+
+    // Same lengths as a single suspend, so one dialog covers both.
+    let until = null;
+    if (action === 'suspend') {
+      const end = suspensionEnd(req.body.duration);
+      if (end === undefined) return fail(res, 400, 'Unknown suspension length. Use h24, d5, d10 or "forever".');
+      until = end;
+    }
 
     const valid = ids.filter((id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id) && !sameId(id, req.user._id));
     const targets = await User.find({ _id: { $in: valid }, role: 'user' }).select('_id name email');
@@ -573,7 +613,10 @@ exports.bulkAction = async (req, res) => {
       if (action === 'delete') {
         await User.deleteMany({ _id: { $in: targetIds } });
       } else if (action === 'activate') {
-        await User.updateMany({ _id: { $in: targetIds } }, { $set: { active: true, suspendedReason: '', suspendedAt: null } });
+        await User.updateMany(
+          { _id: { $in: targetIds } },
+          { $set: { active: true, suspendedReason: '', suspendedAt: null, suspendedUntil: null } }
+        );
       } else {
         const now = new Date();
         await User.updateMany(
@@ -583,7 +626,10 @@ exports.bulkAction = async (req, res) => {
               active: false,
               suspendedReason: String(req.body.reason || '').trim().slice(0, 300),
               suspendedAt: now,
-              tokensValidAfter: new Date(Math.ceil(now.getTime() / 1000) * 1000),
+              suspendedUntil: until,
+              // Only an open-ended lock-out signs everyone out; a timed one keeps
+              // its session, because being able to see the home page is the point.
+              ...(until ? {} : { tokensValidAfter: new Date(Math.ceil(now.getTime() / 1000) * 1000) }),
             },
           }
         );

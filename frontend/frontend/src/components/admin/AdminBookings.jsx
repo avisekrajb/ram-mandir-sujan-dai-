@@ -290,15 +290,20 @@ const AdminBookings = ({ bookings, setBookings, t }) => {
   const handleDeletePujaType = async (typeToDelete) => {
     if (!window.confirm((t?.a1_bookDeleteItemConfirm || 'Delete "{name}"?').replace('{name}', typeToDelete))) return;
     setLoading(true);
+    // The chip goes from the screen straight away. It is put back if the server
+    // refuses, so a failed delete is visible rather than silent - but on success
+    // nothing here reads the list back, which is what used to make a deleted
+    // type reappear on the next load.
+    const previous = pujaTypes;
+    const updatedTypes = pujaTypes.filter(pt => pt !== typeToDelete);
+    setPujaTypes(updatedTypes);
     try {
-      const updatedTypes = pujaTypes.filter(pt => pt !== typeToDelete);
       await api.put('/admin/settings', { pujaTypes: updatedTypes });
-      setPujaTypes(updatedTypes);
-      await syncPujaTypes();
       showToast(t?.a1_bookPujaTypeDeleted || 'Puja type deleted', 'success');
     } catch (error) {
       showToast(saveError(error, t?.a1_bookDeleteFailed || 'Failed to delete'), 'error');
-      // Put the chip back: the server still holds it.
+      // The server still holds it.
+      setPujaTypes(previous);
       await syncPujaTypes();
     } finally {
       setLoading(false);

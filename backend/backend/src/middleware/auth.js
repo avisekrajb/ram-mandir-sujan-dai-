@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const blockRestricted = require('./restricted');
 
 // Every 401 from this middleware means "this session is over" and carries a
 // machine-readable `code`. The web app only signs a person out on these, so a
@@ -57,14 +58,34 @@ const protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Not authorized, user not found', code: 'USER_NOT_FOUND' });
   }
 
-  // Block admin/disabled users unless they are a superadmin (superadmin can never be disabled).
-  // 401 (not 403) so the client drops the session straight away instead of
-  // staying "signed in" and failing every request.
+  // A disabled admin/user is normally locked out entirely (401, so the client drops
+  // the session straight away rather than staying "signed in" and failing every
+  // request). The exception is a *timed* suspension: that one still signs in, but
+  // is held to the home page - see middleware/restricted.js.
   if (req.user.active === false && req.user.role !== 'superadmin') {
-    return res.status(401).json({
-      message: 'Account disabled. Contact the super administrator.',
-      code: 'ACCOUNT_SUSPENDED',
-    });
+    const until = req.user.suspendedUntil;
+    if (!(until instanceof Date)) {
+      // No end time: the original behaviour, no sign-in until an admin lifts it.
+      return res.status(401).json({
+        message: 'Account disabled. Contact the super administrator.',
+        code: 'ACCOUNT_SUSPENDED',
+      });
+    }
+    if (until.getTime() <= Date.now()) {
+      // The window has passed: lift it here so nobody stays locked out by a date
+      // that went by while nobody was looking.
+      req.user.active = true;
+      req.user.suspendedReason = '';
+      req.user.suspendedAt = null;
+      req.user.suspendedUntil = null;
+      req.user
+        .save()
+        .catch((e) => console.error('Auto-lift of a timed suspension failed:', e.message));
+    } else {
+      // Still running. The session check below still applies, and then the
+      // restricted check refuses anything but the home page.
+      req.restrictedUntil = until;
+    }
   }
 
   // Sessions revoked by a password reset / "sign out everywhere".
@@ -77,6 +98,10 @@ const protect = async (req, res, next) => {
 
   // Lets /auth/me renew a token that is getting old (see getMe).
   req.tokenExp = decoded.exp;
+
+  // Signed in, but suspended for now: allow only the home page's own calls.
+  if (req.restrictedUntil) return blockRestricted(req, res, next);
+
   next();
 };
 

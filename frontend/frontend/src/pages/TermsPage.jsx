@@ -40,11 +40,6 @@ const TermsPage = () => {
           icon: <CreditCard className="text-vermilion" size={24} />,
           title: 'Donations & Payments',
           content: 'All donations are voluntary and non-refundable. We are committed to using your donations for the temple\'s maintenance, development, and community services. Payment processing is handled securely through our payment partners.'
-        },
-        {
-          icon: <Clock className="text-vermilion" size={24} />,
-          title: 'Cancellation & Refund Policy',
-          content: 'Bookings can be cancelled up to 24 hours before the scheduled time. Refunds for cancellations will be processed within 7-10 business days. No refunds will be given for no-shows or cancellations made less than 24 hours before the scheduled time.'
         }
       ],
       agreementText: 'By using our services, you agree to these terms and conditions.',
@@ -80,11 +75,6 @@ const TermsPage = () => {
           icon: <CreditCard className="text-vermilion" size={24} />,
           title: 'दान र भुक्तानीहरू',
           content: 'सबै दानहरू स्वैच्छिक र गैर-रिफन्ड योग्य छन्। हामी मन्दिरको मर्मत, विकास, र सामुदायिक सेवाहरूका लागि तपाईंको दानहरू प्रयोग गर्न प्रतिबद्ध छौं। भुक्तानी प्रशोधन हाम्रा भुक्तानी साझेदारहरू मार्फत सुरक्षित रूपमा गरिन्छ।'
-        },
-        {
-          icon: <Clock className="text-vermilion" size={24} />,
-          title: 'रद्द र रिफन्ड नीति',
-          content: 'निर्धारित समयभन्दा २४ घण्टा अघि बुकिङ रद्द गर्न सकिन्छ। रद्द गरिएका बुकिङका लागि रिफन्ड ७-१० कार्य दिनभित्र प्रशोधन गरिनेछ। निर्धारित समयभन्दा २४ घण्टा भन्दा कम अघि रद्द वा नआउनेहरूका लागि कुनै रिफन्ड दिइने छैन।'
         }
       ],
       agreementText: 'हाम्रा सेवाहरू प्रयोग गरेर, तपाईं यी नियम तथा सर्तहरूमा सहमत हुनुहुन्छ।',
@@ -120,11 +110,6 @@ const TermsPage = () => {
           icon: <CreditCard className="text-vermilion" size={24} />,
           title: 'दान और भुगतान',
           content: 'सभी दान स्वैच्छिक और गैर-रिफंड योग्य हैं। हम मंदिर के रखरखाव, विकास, और सामुदायिक सेवाओं के लिए आपके दान का उपयोग करने के लिए प्रतिबद्ध हैं। भुगतान प्रसंस्करण हमारे भुगतान भागीदारों के माध्यम से सुरक्षित रूप से किया जाता है।'
-        },
-        {
-          icon: <Clock className="text-vermilion" size={24} />,
-          title: 'रद्दीकरण और रिफंड नीति',
-          content: 'निर्धारित समय से 24 घंटे पहले बुकिंग रद्द की जा सकती है। रद्दीकरण के लिए रिफंड 7-10 कार्य दिवसों के भीतर संसाधित किए जाएंगे। निर्धारित समय से 24 घंटे से कम समय पर रद्द या न आने पर कोई रिफंड नहीं दिया जाएगा।'
         }
       ],
       agreementText: 'हमारी सेवाओं का उपयोग करके, आप इन शर्तों और नियमों से सहमत होते हैं।',
@@ -160,11 +145,6 @@ const TermsPage = () => {
           icon: <CreditCard className="text-vermilion" size={24} />,
           title: '捐赠与付款',
           content: '所有捐赠均为自愿且不可退款。我们致力于将您的捐赠用于神庙的维护、发展和社区服务。付款处理通过我们的支付合作伙伴安全进行。'
-        },
-        {
-          icon: <Clock className="text-vermilion" size={24} />,
-          title: '取消与退款政策',
-          content: '预订可在预定时间前24小时取消。取消的退款将在7-10个工作日内处理。在预定时间前24小时内取消或未到场将不予退款。'
         }
       ],
       agreementText: '使用我们的服务即表示您同意这些条款和条件。',
@@ -200,11 +180,6 @@ const TermsPage = () => {
           icon: <CreditCard className="text-vermilion" size={24} />,
           title: 'நன்கொடைகள் மற்றும் பணம் செலுத்துதல்',
           content: 'அனைத்து நன்கொடைகளும் தன்னார்வமானவை மற்றும் பணத்தை திரும்பப் பெற முடியாதவை. கோவிலின் பராமரிப்பு, மேம்பாடு மற்றும் சமூக சேவைகளுக்கு உங்கள் நன்கொடைகளைப் பயன்படுத்த நாங்கள் உறுதிபூண்டுள்ளோம். பணம் செலுத்தும் செயலாக்கம் எங்கள் பணம் செலுத்தும் கூட்டாளர்கள் மூலம் பாதுகாப்பாக கையாளப்படுகிறது.'
-        },
-        {
-          icon: <Clock className="text-vermilion" size={24} />,
-          title: 'ரத்து செய்தல் மற்றும் பணத்தை திரும்பப் பெறும் கொள்கை',
-          content: 'திட்டமிடப்பட்ட நேரத்திற்கு 24 மணி நேரத்திற்கு முன் முன்பதிவுகளை ரத்து செய்யலாம். ரத்து செய்தலுக்கான பணத்தை திரும்பப் பெறுதல் 7-10 வேலை நாட்களுக்குள் செயலாக்கப்படும். திட்டமிடப்பட்ட நேரத்திற்கு 24 மணி நேரத்திற்கும் குறைவான நேரத்தில் ரத்து செய்தல் அல்லது வராததற்கு எந்த பணத்தையும் திரும்பப் பெற முடியாது.'
         }
       ],
       agreementText: 'எங்கள் சேவைகளைப் பயன்படுத்துவதன் மூலம், இந்த விதிமுறைகள் மற்றும் நிபந்தனைகளை நீங்கள் ஏற்கிறீர்கள்.',

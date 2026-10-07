@@ -389,14 +389,32 @@ exports.getSettings = async (req, res) => {
 
     /*
      * Keep the booking form in sync with the ceremonies the temple complex can
-     * host ("मन्दिर परिसरमा आयोजना गर्न सकिने कार्यक्रम"). Missing entries are
-     * appended; anything the admin added, renamed or removed is preserved.
+     * host ("मन्दिर परिसरमा आयोजना गर्न सकिने कार्यक्रम"). Only types that have
+     * never been offered are appended.
+     *
+     * The seeded list is compared against `pujaTypesSeeded`, not against
+     * `pujaTypes`, because a type the administrator deleted is missing from
+     * `pujaTypes` on purpose. Checking the current list meant every deleted type
+     * came back on the next page load - the delete appeared not to work.
      */
-    const missing = PUJA_TYPES.filter((t) => !(settings.pujaTypes || []).includes(t));
-    if (missing.length > 0) {
-      settings.pujaTypes = [...(settings.pujaTypes || []), ...missing];
+    const alreadyOffered = new Set(settings.pujaTypesSeeded || []);
+    const current = new Set(settings.pujaTypes || []);
+    const unseen = PUJA_TYPES.filter((t) => !alreadyOffered.has(t) && !current.has(t));
+
+    if (unseen.length > 0) {
+      settings.pujaTypes = [...(settings.pujaTypes || []), ...unseen];
       await settings.save();
-      console.log(`Settings: added ${missing.length} puja type(s)`);
+      console.log(`Settings: added ${unseen.length} puja type(s)`);
+    }
+
+    // Everything currently offered counts as offered from now on, so a deletion
+    // is a decision rather than an absence.
+    const toRecord = PUJA_TYPES.filter((t) => current.has(t) || unseen.includes(t));
+    const recorded = new Set(settings.pujaTypesSeeded || []);
+    const newlyRecorded = toRecord.filter((t) => !recorded.has(t));
+    if (newlyRecorded.length > 0) {
+      settings.pujaTypesSeeded = [...(settings.pujaTypesSeeded || []), ...newlyRecorded];
+      await settings.save();
     }
 
     // Publish the "पूजा तथा धार्मिक कार्यक्रम बुकिङ" content once. Any section the

@@ -15,6 +15,22 @@ import AccessEditor from './AccessEditor';
 
 export const errorText = (error, fallback) => error?.response?.data?.message || fallback;
 
+/*
+ * How long a suspension lasts. The server accepts these keys (see
+ * backend utils/suspension.js) and refuses anything else, so the two lists cannot
+ * drift apart.
+ *
+ * 'forever' is not a timed suspension: that account cannot sign in at all until an
+ * admin lifts it. A timed one signs in but is held to the home page (middleware/
+ * restricted.js) and lifts itself when the clock runs out.
+ */
+export const SUSPENSION_DURATIONS = [
+  { key: 'h24', labelKey: 'k7_suspend24h', fallback: '24 hours', hintKey: 'k7_suspend24hHint', hint: 'Home page only, then it lifts itself' },
+  { key: 'd5', labelKey: 'k7_suspend5d', fallback: '5 days', hintKey: 'k7_suspend5dHint', hint: 'Home page only, then it lifts itself' },
+  { key: 'd10', labelKey: 'k7_suspend10d', fallback: '10 days', hintKey: 'k7_suspend10dHint', hint: 'Home page only, then it lifts itself' },
+  { key: 'forever', labelKey: 'k7_suspendForever', fallback: 'Until I lift it', hintKey: 'k7_suspendForeverHint', hint: 'Cannot sign in at all' },
+];
+
 /** May `viewer` act on `target` (edit, suspend, reset, delete)? Mirrors the server rules. */
 export const canManage = (viewer, target) => {
   if (!viewer || !target) return false;
@@ -335,6 +351,94 @@ const PromoteModal = ({ account, onClose, onSaved, t }) => {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Suspend with a length. A timed suspension lets the person sign in but holds
+ * them to the home page and lifts itself when the time is up; "until I lift it"
+ * stops them signing in at all. The two behave differently, so the choice is
+ * spelled out rather than left as a bare dropdown.
+ */
+const SuspendModal = ({ account, t, busy, onClose, onConfirm, onChanged }) => {
+  const [duration, setDuration] = useState('h24');
+  const [reason, setReason] = useState('');
+  if (!account) return null;
+
+  const who = account.name || account.email;
+  const chosen = SUSPENSION_DURATIONS.find((d) => d.key === duration) || SUSPENSION_DURATIONS[0];
+
+  return (
+    <Modal
+      open
+      onClose={busy ? undefined : onClose}
+      title={t.k7_suspendTitle || 'Suspend this account?'}
+      description={(t.k7_suspendMsg || 'Choose how long {name} is suspended for.')
+        .replace('{name}', who)}
+      footer={
+        <>
+          <Button onClick={onClose} disabled={busy}>{t.cancel || 'Cancel'}</Button>
+          <Button
+            variant="dangerSolid"
+            loading={busy}
+            onClick={() =>
+              onConfirm(
+                () => api.put(`/admin/accounts/${account._id}/status`, { active: false, reason: reason.trim(), duration }),
+                (t.k7_suspendedToast || 'Account suspended').replace('{when}', t[chosen.labelKey] || chosen.fallback),
+                (res) => onChanged({ account: res.data.data })
+              )
+            }
+          >
+            {t.k7_suspend || 'Suspend'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        <fieldset>
+          <legend className="mb-2 text-sm font-semibold text-ink">
+            {t.k7_suspendLength || 'For how long?'}
+          </legend>
+          <div className="space-y-2">
+            {SUSPENSION_DURATIONS.map((d) => {
+              const on = d.key === duration;
+              return (
+                <label
+                  key={d.key}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                    on ? 'border-red-300 bg-red-50' : 'border-line hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="suspend-duration"
+                    value={d.key}
+                    checked={on}
+                    onChange={() => setDuration(d.key)}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">{t[d.labelKey] || d.fallback}</span>
+                    <span className="block text-xs text-ink-soft">{t[d.hintKey] || d.hint}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <Field label={t.k7_suspendReason || 'Reason (optional, only admins see it)'} htmlFor="suspend-reason">
+          <input
+            id="suspend-reason"
+            data-autofocus
+            value={reason}
+            maxLength={300}
+            onChange={(e) => setReason(e.target.value)}
+            className={inputCls}
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+};
+
+/**
  * @param viewer      the signed-in admin (from useAuth)
  * @param onChanged   called with { account } after an edit/role/status change, or { deletedId }
  */
@@ -394,24 +498,7 @@ export const useAccountActions = ({ viewer, onChanged, t = {} }) => {
         <PromoteModal account={a} t={t} onClose={close} onSaved={(account) => { setDlg(null); onChanged({ account }); }} />
       )}
 
-      <ConfirmDialog
-        open={dlg?.type === 'suspend'}
-        onClose={close}
-        busy={busy}
-        tone="danger"
-        title={t.k7_suspendTitle || 'Suspend this account?'}
-        message={a && (t.k7_suspendMsg || '{name} will be signed out everywhere right away and will not be able to sign in until you reactivate the account.').replace('{name}', a.name || a.email)}
-        reasonLabel={t.k7_suspendReason || 'Reason (optional, only admins see it)'}
-        confirmLabel={t.k7_suspend || 'Suspend'}
-        cancelLabel={t.cancel || 'Cancel'}
-        onConfirm={(reason) =>
-          run(
-            () => api.put(`/admin/accounts/${a._id}/status`, { active: false, reason }),
-            t.k7_suspendedToast || 'Account suspended',
-            (res) => onChanged({ account: res.data.data })
-          )
-        }
-      />
+      <SuspendModal account={a} t={t} busy={busy} onClose={close} onConfirm={run} onChanged={onChanged} />
 
       <ConfirmDialog
         open={dlg?.type === 'reset'}

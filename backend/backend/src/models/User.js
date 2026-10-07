@@ -80,6 +80,14 @@ const userSchema = new mongoose.Schema({
   // Why an account was suspended (shown to admins, never to the user).
   suspendedReason: { type: String, default: '', trim: true, maxlength: 300 },
   suspendedAt: { type: Date, default: null },
+  /*
+   * When a timed suspension runs out. While this date is still in the future the
+   * account can sign in but is held to the home page (see middleware/restricted.js);
+   * once it passes the suspension lifts on its own. Null means "no end time", which
+   * is the older behaviour: the account cannot sign in at all until an admin
+   * reactivates it.
+   */
+  suspendedUntil: { type: Date, default: null },
   // Sign-in tracking, written by recordLogin() in authController.
   lastLoginAt: { type: Date, default: null },
   lastLoginIp: { type: String, default: '' },

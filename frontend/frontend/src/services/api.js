@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken, clearAuthData, isSessionEndedError, SESSION_ENDED_EVENT } from './auth';
+import { getToken, clearAuthData, isSessionEndedError, isRestrictedError, SESSION_ENDED_EVENT, ACCOUNT_RESTRICTED_EVENT } from './auth';
 
 // Relative base URL by default: requests go to the same origin and the dev-server
 // proxy forwards /api to the backend. This keeps the app working unchanged from
@@ -102,6 +102,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // A timed suspension: the login is still good, so nothing is cleared - the
+    // app is just told to send the visitor back to the home page and explain why.
+    if (isRestrictedError(error)) {
+      window.dispatchEvent(
+        new CustomEvent(ACCOUNT_RESTRICTED_EVENT, {
+          detail: { until: error.response?.data?.suspendedUntil || null },
+        })
+      );
+      return Promise.reject(error);
+    }
     const sent = error.config?.headers?.Authorization;
     // Only drop the saved login if the request that failed used it. A slow request sent
     // with the previous token (e.g. just before a password change handed out a new one)

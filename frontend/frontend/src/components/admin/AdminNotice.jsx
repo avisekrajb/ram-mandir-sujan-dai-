@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Eye, EyeOff, Edit, X, Plus, Trash2, Image as ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
+import { Save, Eye, EyeOff, Edit, X, Plus, Trash2, Image as ImageIcon, ChevronUp, ChevronDown, QrCode } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import api from '../../services/api';
@@ -77,6 +77,30 @@ const AdminNotice = ({ settings, updateSettings, t }) => {
   const [activeLang, setActiveLang] = useState('en');
   const [draft, setDraft] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  // The donation QR shown at the bottom of the popup. Same picture as Admin ->
+  // Donation Account; only the on/off switch lives here as well.
+  const qrEnabled = settings?.donate?.qrEnabled !== false;
+  const [savingQr, setSavingQr] = useState(false);
+
+  const toggleQr = async () => {
+    setSavingQr(true);
+    const next = !qrEnabled;
+    try {
+      await updateSettings({ donate: { ...(settings?.donate || {}), qrEnabled: next } });
+      showToast(
+        next
+          ? (t.a3_notice_qrShown || 'QR will show in the notice popup')
+          : (t.a3_notice_qrHidden || 'QR hidden from the notice popup'),
+        'success'
+      );
+    } catch (error) {
+      console.error('Save notice QR error:', error);
+      showToast(error.response?.data?.message || (t.a3_notice_saveFailed || 'Failed to save'), 'error');
+    } finally {
+      setSavingQr(false);
+    }
+  };
 
   const openAddModal = () => {
     const n = emptyNotice();
@@ -223,6 +247,45 @@ const AdminNotice = ({ settings, updateSettings, t }) => {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-vermilion text-white font-semibold text-sm hover:bg-[#820606] transition-all"
         >
           <Plus size={16} /> {t.a3_notice_addNew || 'Add New Notice'}
+        </button>
+      </div>
+
+      {/*
+        The donation QR at the bottom of the notice popup is the one from
+        Admin -> Donation Account, and the popup hides it when this is off. It is
+        a single switch on purpose: two switches for one picture would let them
+        disagree. The picture itself is still uploaded from Donation Account.
+      */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <QrCode size={18} className="mt-0.5 shrink-0 text-vermilion" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-ink">
+              {t.a3_notice_qrToggle || 'Show the donation QR in the notice popup'}
+            </p>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              {qrEnabled
+                ? (t.a3_notice_qrOn || 'The QR appears at the bottom of the popup. Switch it off to hide it.')
+                : (t.a3_notice_qrOff || 'The QR is hidden from the popup right now.')}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={qrEnabled}
+          aria-label={t.a3_notice_qrToggle || 'Show the donation QR in the notice popup'}
+          disabled={savingQr}
+          onClick={toggleQr}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
+            qrEnabled ? 'bg-vermilion' : 'bg-gray-300'
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              qrEnabled ? 'translate-x-5' : 'translate-x-0.5'
+            }`}
+          />
         </button>
       </div>
 
