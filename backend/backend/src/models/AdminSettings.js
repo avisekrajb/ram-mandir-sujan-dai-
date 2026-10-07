@@ -1163,6 +1163,73 @@ aboutPreview: {
   },
 
   // ============================================
+  // OFFLINE NOTICE + MUSIC (super-admin only)
+  // ============================================
+  // Shown automatically when the visitor's connection drops, with a chosen
+  // temple sound. Super-admin only, because a sound nobody can switch off is
+  // exactly the kind of whole-site change that should not be one admin's
+  // decision - see SUPERADMIN_ONLY_SETTINGS_KEYS in the permissions middleware.
+  offlineNotice: {
+    // The notice itself. Off by default: a visitor who opens the site with no
+    // connection should be told, but not everyone wants a sound about it.
+    enabled: { type: Boolean, default: true },
+    /*
+     * The uploaded MP3, when the super admin has chosen their own music instead of
+     * the synthesised bell. Empty until one is uploaded; the controller clears
+     * every field together, so a deleted track leaves nothing behind.
+     */
+    track: {
+      url: { type: String, default: '' },
+      name: { type: String, default: '' },
+      // Seconds, recorded by the admin panel from the file header.
+      duration: { type: Number, default: 0 },
+      bytes: { type: Number, default: 0 },
+      uploadedAt: { type: Date, default: null },
+    },
+    // The music/sound choices offered to the super admin. "temple" is the
+    // synthesised bell and Om already used for the welcome greeting, so no
+    // audio file has to be uploaded or hosted.
+    //
+    // 'upload' plays the super admin's own MP3 from `track` below. It must be
+    // listed here as well as in the admin panel: Mongoose rejects an unlisted
+    // value, so a choice offered by the form but missing from this enum saves
+    // nothing and reports a validation error.
+    sound: { type: String, default: 'temple', enum: ['none', 'upload', 'temple', 'bell', 'om'] },
+    // 0-100, mapped onto the Web Audio master gain. Kept modest by default: an
+    // unexpected sound should not startle anyone.
+    volume: { type: Number, default: 40, min: 0, max: 100 },
+    // Whether the sound repeats while still offline, or plays once.
+    repeat: { type: Boolean, default: true },
+    // Seconds between repeats.
+    interval: { type: Number, default: 12, min: 4, max: 120 },
+    // Let the visitor's own speaker switch mute it too, rather than playing
+    // regardless. On by default, because it respects a choice already made.
+    respectSoundToggle: { type: Boolean, default: true },
+    title: {
+      en: { type: String, default: 'You are offline' },
+      ne: { type: String, default: 'तपाईं अफलाइन हुनुहुन्छ' },
+      hi: { type: String, default: 'आप ऑफ़लाइन हैं' },
+      zh: { type: String, default: '您已离线' },
+      ta: { type: String, default: 'நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்' },
+    },
+    message: {
+      en: { type: String, default: 'The connection to the internet has been lost. Anything you have already opened is still available.' },
+      ne: { type: String, default: 'इन्टरनेट जडान टुटेको छ। तपाईंले पहिले खोलेका पृष्ठहरू अझै उपलब्ध छन्।' },
+      hi: { type: String, default: 'इंटरनेट कनेक्शन टूट गया है। आपने पहले खोले गए पृष्ठ अभी भी उपलब्ध हैं।' },
+      zh: { type: String, default: '与互联网的连接已断开。您已打开的页面仍然可用。' },
+      ta: { type: String, default: 'இண்டர்னெட் இணைப்பு துண்டிக்கப்பட்டுள்ளது. நீங்கள் ஏற்கனவே திறந்த பக்கங்கள் இன்னும் கிடைக்கின்றன.' },
+    },
+    // Shown for a few seconds when the connection comes back.
+    backOnline: {
+      en: { type: String, default: 'Back online' },
+      ne: { type: String, default: 'फेरि अनलाइन' },
+      hi: { type: String, default: 'वापस ऑनलाइन' },
+      zh: { type: String, default: '已恢复在线' },
+      ta: { type: String, default: 'மீண்டும் ஆன்லைன்' },
+    },
+  },
+
+  // ============================================
   // TIMESTAMP
   // ============================================
   updatedAt: {

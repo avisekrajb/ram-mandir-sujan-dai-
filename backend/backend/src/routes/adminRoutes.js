@@ -6,7 +6,7 @@ const requireSuperAdmin = require('../middleware/superadmin');
 const { requireArea, areaForAdminPath, requireSettingsAccess } = require('../middleware/permissions');
 // `bellUpload` is the multer middleware; the controller handler below shares its
 // name with the middleware export, so the middleware is aliased here.
-const { upload, uploadBellSound: bellUpload, uploadGalleryBatch, GALLERY_BATCH_MAX } = require('../middleware/upload');
+const { upload, uploadBellSound: bellUpload, uploadOfflineMusic: offlineMusicUpload, uploadGalleryBatch, GALLERY_BATCH_MAX } = require('../middleware/upload');
 const donationAccounts = require('../controllers/donationAccountController');
 const rateLimit = require('../middleware/rateLimit');
 const accountCtrl = require('../controllers/accountController');
@@ -24,6 +24,8 @@ const {
   uploadHeroImage,
   uploadBellSound,
   deleteBellSound,
+  uploadOfflineMusic,
+  deleteOfflineMusic,
   uploadLogo,
   uploadAboutPhoto,
   uploadQRPhoto,
@@ -303,6 +305,14 @@ router.post('/upload/hero-photo', upload.single('image'), uploadHeroImage);
 // rather than typed, so it is not something a content admin should reach.
 router.post('/bell/sound', requireSuperAdmin, bellUpload.single('audio'), uploadBellSound);
 router.delete('/bell/sound', requireSuperAdmin, deleteBellSound);
+
+// ---------- Offline music (MP3, played while a visitor has no connection) ----------
+// Super admin only, like the bell above: this is the sound every visitor hears the
+// moment their connection drops, so it is not a content admin's to choose. The
+// deletion clears the file and its settings together and touches nothing else on
+// the offline page.
+router.post('/offline/music', requireSuperAdmin, offlineMusicUpload.single('audio'), uploadOfflineMusic);
+router.delete('/offline/music', requireSuperAdmin, deleteOfflineMusic);
 router.post('/upload/logo', upload.single('image'), uploadLogo);
 router.post('/upload/about', upload.single('image'), uploadAboutPhoto);
 router.post('/upload/qr', upload.single('image'), uploadQRPhoto);

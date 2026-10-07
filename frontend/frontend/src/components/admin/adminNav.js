@@ -1,7 +1,8 @@
 import {
   Activity, Bell, BellRing, BookOpen, Briefcase, CalendarDays, ClipboardList, Clock, Cloud, Database, Facebook, FileText,
   Flame, Gift, History, Home, Image, Info, Landmark, LayoutDashboard, Mail, Megaphone, PanelBottom, PanelTop, PenLine,
-  Quote, Radio, ScrollText, Send, Settings, Share2, ShieldCheck, SlidersHorizontal, Star, Stamp, UserCog, Users,
+Quote, Radio, ScrollText, Send, Settings, Share2, ShieldCheck, SlidersHorizontal,
+  Star, Stamp, UserCog, Users, WifiOff,
   UsersRound,
 } from 'lucide-react';
 import { areaForPage, hasArea, isSuperAdminOnlyPage } from '../../utils/permissions';
@@ -104,6 +105,9 @@ export const getAdminSections = (t, isSuperAdmin, user) => {
         { key: 'facebook-video', label: t.navFacebookVideo || 'Facebook Video', icon: Facebook },
         // Sound played when a new notification reaches the panel (super-admin only).
         ...(isSuperAdmin ? [{ key: 'bell', label: t.a1_bellNavLabel || 'Bell Sound', icon: BellRing }] : []),
+        // The notice and sound shown when a visitor loses their connection. Super-admin
+        // only, because it can start a sound on every device without being asked.
+        ...(isSuperAdmin ? [{ key: 'offline', label: t.a1_offNavLabel || 'Offline Notice', icon: WifiOff }] : []),
       ],
     },
   ];

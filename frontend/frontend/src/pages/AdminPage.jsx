@@ -21,6 +21,7 @@ import AdminAudit from '../components/admin/AdminAudit';
 import AdminProfile from '../components/admin/AdminProfile';
 import AdminLivePuja from '../components/admin/AdminLivePuja';
 import AdminHeader from '../components/admin/AdminHeader';
+import AdminOfflineNotice from '../components/admin/AdminOfflineNotice';
 import AdminQuote from '../components/admin/AdminQuote';
 import AdminTimings from '../components/admin/AdminTimings';
 import AdminAbout from '../components/admin/AdminAbout';
@@ -393,6 +394,8 @@ const blocked = (pageArea && !hasArea(user, pageArea)) || (superOnlyPage && !isS
             {/* Content Management */}
             {/* Header: the thin strip above the navbar, which can be hidden */}
             <Route path="header" element={<AdminHeader t={t} />} />
+            {/* Offline notice and its sound. Super-admin only, like the header above. */}
+            <Route path="offline" element={<AdminOfflineNotice t={t} />} />
             {/* Hero banner lives on the Home page - see AdminHome */}
             {/* Live Puja: the YouTube channel and the fallback video */}
             <Route path="live-puja" element={<AdminLivePuja

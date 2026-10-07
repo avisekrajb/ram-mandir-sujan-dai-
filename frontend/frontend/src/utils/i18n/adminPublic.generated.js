@@ -148,7 +148,8 @@ const adminPublic = {
   "a6_teamLoadFailed": "टिम सदस्यहरू लोड गर्न सकिएन",
   "a6_teamTryAgain": "फेरि प्रयास गर्नुहोस्",
   "a6_teamUnknown": "अज्ञात",
-  "a6_teamNoMembers": "कुनै समिति सदस्य फेला परेन"
+  "a6_teamNoMembers": "कुनै समिति सदस्य फेला परेन",
+  "k7_suspendedNotice": "तपाईंको खाता निलम्बन गरिएको छ, त्यसैले सिर्फ गृहपृष्ठ उपलब्ध छ। लगभग {left} पछि यो आफैँ हट्नेछ।"
  },
  "hi": {
   "a1_bpcTitle": "बुकिंग पेज सामग्री",

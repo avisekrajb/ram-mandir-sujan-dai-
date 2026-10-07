@@ -1035,36 +1035,96 @@ function MarqueeRow({ items, direction = -1, renderCard }) {
   const ref = useRef(null);
   const state = useRef({ paused: false, resumeAt: 0, acc: 0, drag: null, moved: 0 });
 
+  /*
+   * Is this a finger rather than a mouse? Checked once per mount and again on
+   * resize, because a tablet changes answer when it is docked.
+   */
+  const isTouch = () =>
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(pointer: coarse)').matches;
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return undefined;
     const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const setWidth = () => el.scrollWidth / 3;
-    el.scrollLeft = setWidth(); // start in the middle copy so both directions can loop
+
+    /*
+     * One set's width, measured from the cards themselves rather than
+     * `scrollWidth / 3`. The division was never exact: the browser rounds
+     * scrollWidth to whole pixels and the row has a leading/trailing pad, so the
+     * seam drifted further out on every pass and the loop visibly jumped.
+     * Measuring the first set of cards is the width that is actually true.
+     */
+    const perSet = items.length / 3;
+    const setWidth = () => {
+      const cards = el.querySelectorAll(':scope > div > *');
+      if (cards.length < perSet) return el.scrollWidth / 3;
+      let w = 0;
+      for (let i = 0; i < perSet; i += 1) {
+        const card = cards[i];
+        if (!card) break;
+        const rect = card.getBoundingClientRect();
+        const gap = parseFloat(getComputedStyle(card.parentElement).columnGap) || 0;
+        w += rect.width + gap;
+      }
+      return w || el.scrollWidth / 3;
+    };
+
+    const recentre = () => {
+      const w = setWidth();
+      if (w) el.scrollLeft = w;
+    };
+    recentre();
+
     const wrap = () => {
       const w = setWidth();
       if (!w) return;
       if (el.scrollLeft >= w * 2) el.scrollLeft -= w;
       else if (el.scrollLeft <= 1) el.scrollLeft += w;
     };
+
+    /*
+     * On a phone the row is a swipeable strip, not a marquee. Two reasons, and
+     * both were reported as "the marquee is not working":
+     *  - Nothing drifts on its own, so there is nothing to watch move. The photos
+     *    sit still until the finger moves them.
+     *  - The old loop wrote to scrollLeft every animation frame. On a touch
+     *    screen the browser owns that property during a gesture, so each write
+     *    fought the finger and the strip either froze or snapped. Leaving it to
+     *    the browser is what makes the swipe work.
+     */
     let raf;
-    let last = performance.now();
-    const tick = (now) => {
-      const dt = Math.min(now - last, 64);
-      last = now;
-      const st = state.current;
-      if (!reduced && !st.paused && now >= st.resumeAt) {
-        st.acc += (-direction) * 0.045 * dt; // ~45px per second
-        const step = Math.trunc(st.acc);
-        if (step !== 0) {
-          el.scrollLeft += step;
-          st.acc -= step;
+    if (!reduced && !isTouch()) {
+      let last = performance.now();
+      const tick = (now) => {
+        const dt = Math.min(now - last, 64);
+        last = now;
+        const st = state.current;
+        if (!st.paused && now >= st.resumeAt) {
+          st.acc += -direction * 0.045 * dt; // ~45px per second
+          const step = Math.trunc(st.acc);
+          if (step !== 0) {
+            el.scrollLeft += step;
+            st.acc -= step;
+          }
         }
-      }
-      wrap();
+        wrap();
+        raf = requestAnimationFrame(tick);
+      };
       raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+    } else {
+      // Still wrapped on touch: a fast flick can carry the strip past the seam.
+      const onScroll = () => wrap();
+      el.addEventListener('scroll', onScroll, { passive: true });
+      const onResize = () => recentre();
+      window.addEventListener('resize', onResize);
+      return () => {
+        el.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onResize);
+      };
+    }
+
     return () => cancelAnimationFrame(raf);
   }, [direction, items.length]);
 
@@ -1092,7 +1152,7 @@ function MarqueeRow({ items, direction = -1, renderCard }) {
   return (
     <div
       ref={ref}
-      className="scroll-hidden cursor-grab select-none overflow-x-auto overflow-y-hidden py-3 active:cursor-grabbing"
+      className="gallery-marquee-row cursor-grab select-none py-3 active:cursor-grabbing"
       style={{ touchAction: 'pan-x pan-y' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

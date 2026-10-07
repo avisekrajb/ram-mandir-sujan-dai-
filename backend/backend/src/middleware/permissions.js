@@ -78,13 +78,15 @@ const settingsKeyArea = (key) => {
  * Settings only a super admin may write, whatever areas they hold. These are the
  * parts of the site's own chrome rather than its content: turning the header off,
  * or repointing it, is a whole-site change that no content admin should be able
- * to make on their own.
+ * to make on their own. The offline notice is here for the same reason, and more
+ * sharply: it can start a sound on every visitor's device without asking them
+ * first, which is not a decision one content admin should be able to make.
  *
  * A key on this list is dropped from an ordinary admin's save, exactly like a key
  * whose area they do not hold, so a page that sends the whole settings document
  * back is not blocked by the keys it has no business changing.
  */
-const SUPERADMIN_ONLY_SETTINGS_KEYS = ['header'];
+const SUPERADMIN_ONLY_SETTINGS_KEYS = ['header', 'offlineNotice'];
 
 const isSuperAdminOnlyKey = (key) => SUPERADMIN_ONLY_SETTINGS_KEYS.includes(key);
 

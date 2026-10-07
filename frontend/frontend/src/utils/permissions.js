@@ -141,7 +141,7 @@ export const areaForPage = (path) => {
  *
  * Kept here rather than in a page so the route guard and the navigation agree.
  */
-export const SUPERADMIN_ONLY_PAGES = ['access', 'account', 'header', 'backup', 'bell'];
+export const SUPERADMIN_ONLY_PAGES = ['access', 'account', 'header', 'backup', 'bell', 'offline'];
 
 /** True when this path is one of the super-admin-only pages. */
 export const isSuperAdminOnlyPage = (path) => SUPERADMIN_ONLY_PAGES.includes(path);

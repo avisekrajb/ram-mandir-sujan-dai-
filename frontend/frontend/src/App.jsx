@@ -16,6 +16,7 @@ import PrivateRoute from './routes/PrivateRoute';
 import AdminRoute from './routes/AdminRoute';
 import SuperAdminRoute from './routes/SuperAdminRoute';
 import NoticeModal from './components/modals/NoticeModal';
+import OfflineNotice from './components/common/OfflineNotice';
 import MaintenanceModal from './components/modals/MaintenanceModal';
 import ScrollToTop from './components/common/ScrollToTop';
 import RouteSeo from './components/common/RouteSeo';
@@ -23,6 +24,7 @@ import ScrollToTopButton from './components/common/ScrollToTopButton';
 import SocialFloating from './components/common/SocialFloating';
 import Chatbot from './components/chatbot/Chatbot'; // <-- Import Chatbot component
 import CookieConsent from './components/common/CookieConsent';
+import OmTrail from './components/common/OmTrail';
 
 // Components
 import AuthModal from './components/modals/AuthModal';
@@ -125,6 +127,15 @@ function App() {
 
                         {/* Notice Modal - Shows on first visit */}
                         <NoticeModal />
+
+                        {/*
+                          Offline notice and its sound. Mounted outside the Layout
+                          so it also appears in the admin console, where a dropped
+                          connection is just as confusing. Watches the browser's own
+                          online/offline events rather than waiting for a request to
+                          fail.
+                        */}
+                        <OfflineNotice />
 
                         {/* Floating Social Icons */}
                         <SocialFloating />
@@ -249,11 +260,19 @@ function App() {
                       setForgotModal={setForgotModal}
                     />
                     
-                    {/* Forgot Password Modal */}
+{/* Forgot Password Modal */}
                     <ForgotPasswordModal
                       open={forgotModal}
                       onClose={() => setForgotModal(false)}
                     />
+
+                    {/*
+                      Om trailing the pointer, in the reader's script. Last so it
+                      paints above everything else; it draws into a fixed overlay
+                      that is pointer-events: none, so it never covers or
+                      intercepts anything - see OmTrail.jsx.
+                    */}
+                    <OmTrail />
                   </ChatbotProvider> {/* <-- Close ChatbotProvider */}
                 </AdminLogsProvider>
               </BackupProvider>

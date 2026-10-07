@@ -156,8 +156,14 @@ function hallEcho(ctx) {
   return buffer;
 }
 
-/** Schedule the whole greeting on `ctx` starting at `t`; returns the master gain. */
-export function scheduleWelcome(ctx, t) {
+/**
+ * Schedule the greeting on `ctx` starting at `t`; returns the master gain.
+ *
+ * `sound` picks which parts sound, so the same synthesis serves the welcome
+ * greeting ('temple' - bell and Om together) and the offline notice, where a
+ * super admin may choose the bell alone or the Om alone.
+ */
+export function scheduleWelcome(ctx, t, sound = 'temple') {
   const master = ctx.createGain();
   const dry = ctx.createGain();
   const hall = ctx.createConvolver();
@@ -170,10 +176,13 @@ export function scheduleWelcome(ctx, t) {
   wet.connect(master);
   master.connect(ctx.destination);
 
-  strikeBell(ctx, dry, t);
-  chantOm(ctx, dry, t + OM_DELAY);
+  if (sound !== 'om') strikeBell(ctx, dry, t);
+  if (sound !== 'bell') chantOm(ctx, dry, t + OM_DELAY);
   return master;
 }
+
+/** How long one full occurrence lasts, for callers that need to time a repeat. */
+export const WELCOME_SECONDS = TOTAL_SECONDS;
 
 /* ------------------------------------------------------------------ */
 /* Playback: once per page load, as soon as the browser allows sound.  */

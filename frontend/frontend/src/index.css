@@ -2231,6 +2231,130 @@ html[lang="hi"] body {
   }
 }
 
+/*
+   The home-page gallery strip.
+
+   This deliberately does not use .scroll-hidden. That class sets
+   `overflow-y: auto` and is written after Tailwind's utilities, so on a phone it
+   overrode `overflow-y-hidden` and the row became a vertical scroll area too:
+   the finger scrolled the page inside the strip instead of sliding the photos,
+   which is why the swipe appeared broken on mobile. The rule here sets the
+   overflow explicitly, after the utilities, so nothing else can override it.
+
+   `pan-x` lets the browser handle the horizontal swipe itself. That is what
+   makes touch work: the page never writes scrollLeft during a finger gesture,
+   so the two cannot fight each other.
+ */
+.gallery-marquee-row {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.gallery-marquee-row::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/*
+   Om left behind along the path the pointer has taken, in the reader's script
+   (OmTrail.jsx).
+
+   Nothing follows the pointer. A mark is only deposited where it has just passed,
+   then rises and fades - see that file for why.
+
+   The browser's own cursor is left in place - this is an overlay, not a
+   replacement - so the pointer stays as precise as the visitor's system cursor
+   for text fields and small buttons. The overlay is pointer-events: none, so it
+   cannot intercept a click or block a text selection.
+
+   Only transform, opacity and filter are animated, so the browser keeps the trail
+   on the compositor and never triggers layout.
+ */
+.rt-om-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  overflow: hidden;
+  /* Hidden until the pointer first moves, so it cannot flash on page load. */
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+.rt-om-layer[data-visible='true'] {
+  opacity: 1;
+}
+
+/*
+  One deposited mark. Parked off-screen and invisible until the component adds
+  --rt-om-mark--live, which replays the animation below.
+
+  The font stack leads with the scripts that have a real glyph for Om, so the
+  Devanagari and Tamil forms are never rendered from a fallback font that lacks
+  them and squares off.
+*/
+.rt-om-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: 'Noto Sans Devanagari', 'Nirmala UI', 'Latha', 'Noto Sans Tamil',
+    'Tamil Sangam MN', 'Segoe UI', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: #7a2e12;
+  /* A light halo so a mark stays readable over the maroon header as well as over
+     a white page. */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85), 0 0 9px rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  transform: translate3d(var(--rt-om-x, -999px), var(--rt-om-y, -999px), 0) scale(var(--rt-om-scale, 1));
+  will-change: transform, opacity;
+}
+
+/* --rt-om-life is set by the component, so the pool's idea of how long a mark
+   lives and the animation's cannot drift apart. */
+.rt-om-mark--live {
+  animation: rt-om-rise var(--rt-om-life, 1100ms) ease-out forwards;
+}
+
+/*
+  Rises and leans as it fades, softening slightly. The blur is kept modest on
+  purpose: this is a mark dissolving into the page, so it should lose contrast
+  before it loses its shape, or it just looks like a smudge over the content.
+*/
+@keyframes rt-om-rise {
+  0% {
+    opacity: 0.6;
+    filter: blur(0.3px);
+  }
+  40% {
+    opacity: 0.4;
+    filter: blur(1.4px);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(3.5px);
+    transform: translate3d(
+      calc(var(--rt-om-x, -999px) + var(--rt-om-lean, 0px)),
+      calc(var(--rt-om-y, -999px) - 22px),
+      0
+    ) scale(calc(var(--rt-om-scale, 1) * 0.78));
+  }
+}
+
+/*
+  Motion is opt-in here. A visitor who has asked for reduced motion gets their
+  normal cursor and nothing following it.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .rt-om-layer {
+    display: none;
+  }
+}
+
 /* Scrolling announcement line above the navbar (Admin → Header). The track holds
    the message twice and is moved by exactly half its own width, so the second
    copy arrives where the first one left off: the loop has no gap and no jump.

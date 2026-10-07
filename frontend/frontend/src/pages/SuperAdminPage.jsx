@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShieldCheck, Users, CalendarDays, Gift, Languages,
   ScrollText, Database, LogOut, Plus, Trash2, ToggleLeft, ToggleRight,
   ArrowLeft, RefreshCw, X, Eye, DatabaseZap, Cloud, Wrench, Download,
-  ChevronDown, Image as ImageIcon, Film, HardDrive, PanelTop, BellRing
+  ChevronDown, Image as ImageIcon, Film, HardDrive, PanelTop, BellRing, WifiOff
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -15,6 +15,7 @@ import AdminAccount from '../components/admin/AdminAccount';
 import AdminAccess from '../components/admin/AdminAccess';
 import AdminBackup from '../components/admin/AdminBackup';
 import AdminBell from '../components/admin/AdminBell';
+import AdminOfflineNotice from '../components/admin/AdminOfflineNotice';
 import AdminHeader from '../components/admin/AdminHeader';
 import api from '../services/api';
 import { formatDate as formatLocaleDate, formatDateTimeLocale } from '../utils/formatDate';
@@ -54,6 +55,7 @@ const DELEGATED = [
   { slug: 'access', labelKey: 'k7_adminsAccess', label: 'Admins & access', adminKey: 'access', icon: ShieldCheck },
   { slug: 'header', labelKey: 'a1_headerNavLabel', label: 'Header', adminKey: 'header', icon: PanelTop },
   { slug: 'bellsound', labelKey: 'a1_bellNavLabel', label: 'Bell Sound', adminKey: 'bell', icon: BellRing },
+  { slug: 'offline', labelKey: 'a1_offNavLabel', label: 'Offline Notice', adminKey: 'offline', icon: WifiOff },
 ];
 
 const TAB_IDS = TABS.map((x) => x.id);
@@ -1208,6 +1210,7 @@ const setTab = (id) => goTo(id);
           {delegated?.slug === 'access' && <AdminAccess t={t} />}
           {delegated?.slug === 'header' && <AdminHeader t={t} />}
           {delegated?.slug === 'bellsound' && <AdminBell t={t} />}
+          {delegated?.slug === 'offline' && <AdminOfflineNotice t={t} />}
         </main>
       </div>
     </div>

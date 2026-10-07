@@ -10,6 +10,34 @@ const storage = new CloudinaryStorage({
     folder: 'temple',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'avi'],
     resource_type: 'auto',
+    /*
+     * Compression, applied while the file is being stored.
+     *
+     * The site already negotiates format and quality on *delivery* (f_auto and
+     * q_auto in the image URLs), so bandwidth was not the problem - storage was:
+     * the full-size original sat on the CDN and was paid for whatever its size,
+     * however small it was actually displayed. Applying the reduction here means
+     * the stored asset itself is the smaller one, so the saving is permanent
+     * rather than a per-request saving.
+     *
+     * Images: quality:auto:good lets Cloudinary pick a quality that is visually
+     * lossless to the eye, which is typically 30-50% smaller than the original.
+     * The dimension cap is generous on purpose - a phone photo is often 4000px
+     * wide, while even a full-screen hero is not rendered wider than about 2400px,
+     * so the excess is never seen. Videos: auto:eco lowers the bitrate without
+     * changing the codec family, so playback stays reliable on every device.
+     *
+     * Metadata is stripped by Cloudinary by default; `preserve_metadata` would be
+     * needed to keep camera details, which would also keep the file large.
+     */
+    transformation: [
+      {
+        quality: 'auto:good',
+        width: 2400,
+        height: 2400,
+        crop: 'limit', // shrink to fit inside the cap; never enlarge or crop
+      },
+    ],
     timeout: 300000, // 5 minutes timeout for Cloudinary
   },
 });
@@ -53,6 +81,15 @@ for (const method of ['single', 'array', 'fields']) {
  */
 const GALLERY_BATCH_MAX = 6;
 
+/**
+ * Several photos in one request, for Admin -> Gallery. The shared `upload` instance
+ * allows a single file, so this is its own multer with the same Cloudinary folder and
+ * the same image-only check, but with room for a batch. The route also caps the count
+ * itself, so a hand-made request cannot exceed what the form offers.
+ *
+ * It stores photos already compressed, same as `upload` - see the transformation
+ * there for why the saving is made on the stored asset rather than on delivery.
+ */
 const galleryBatchUpload = multer({
   storage: storage,
   limits: {
@@ -77,7 +114,7 @@ const handleMulterError = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Pictures from visitors are limited to 5 MB (payment screenshots 10 MB); admin videos to 50 MB.'
+        message: 'File too large. Pictures from visitors are limited to 5 MB (payment screenshots 10 MB); offline music and bell sounds to 10 MB and 5 MB; admin videos to 50 MB.'
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
@@ -145,10 +182,71 @@ const uploadBellSound = multer({
   fileFilter: bellFileFilter,
 });
 
+/*
+ * Music played while a visitor is offline (Admin -> Offline Notice).
+ *
+ * Like the bell sound it is separate from `upload`, so the image and video
+ * endpoints keep rejecting audio, and the file lands in its own folder where it
+ * is easy to find and remove.
+ *
+ * 10 MB rather than the bell's 5 MB: this is ten minutes of music rather than a
+ * one-minute clip, so the larger ceiling is what that length actually needs.
+ *
+ * Note the two limits work together: ten minutes inside 10 MB means the file has
+ * to be about 128 kbps or lower. A CD-quality 192 kbps recording of ten minutes is
+ * roughly 14 MB and will be refused on size before the length is even considered.
+ */
+const OFFLINE_MUSIC_MAX_BYTES = 10 * 1024 * 1024;
+
+const offlineMusicStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'temple/offline-music',
+    allowed_formats: ['mp3'],
+    resource_type: 'video', // Cloudinary files audio under `video`
+    /*
+     * Clip at ten minutes. The admin panel refuses a longer file before
+     * uploading, but the clip is what actually guarantees the stored track cannot
+     * outlast the length that was advertised - so the site is not relying on the
+     * browser's reading of the header being right.
+     *
+     * Only the length is set here. There is deliberately no `audio_codec: 'none'`,
+     * which is how you mute a *video*: on an MP3 the audio stream is the whole
+     * file, so asking for no audio codec produces a track with nothing to play and
+     * the browser refuses it with "no audio channel detected".
+     */
+    transformation: [{ duration: 600 }],
+    timeout: 300000,
+  },
+});
+
+const offlineMusicFilter = (req, file, cb) => {
+  if (file.mimetype === 'audio/mpeg' || file.mimetype === 'audio/mp3') {
+    cb(null, true);
+    return;
+  }
+  const err = new Error(
+    `Invalid file type: ${file.mimetype}. The offline music must be an MP3 file.`
+  );
+  err.isUploadError = true;
+  cb(err, false);
+};
+
+const uploadOfflineMusic = multer({
+  storage: offlineMusicStorage,
+  limits: {
+    fileSize: OFFLINE_MUSIC_MAX_BYTES,
+    files: 1,
+  },
+  fileFilter: offlineMusicFilter,
+});
+
 // Export both upload and error handler
 module.exports = {
   upload,
   uploadBellSound,
+  uploadOfflineMusic,
+  OFFLINE_MUSIC_MAX_BYTES,
   uploadGalleryBatch: galleryBatchUpload,
   GALLERY_BATCH_MAX,
   handleMulterError,

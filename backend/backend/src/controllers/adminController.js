@@ -873,6 +873,105 @@ exports.uploadHeroImage = async (req, res) => {
   }
 };
 
+// ============ OFFLINE MUSIC (super-admin only) ============
+
+// Ten minutes, as offered in the admin panel. Cloudinary is asked to clip at
+// this point so the stored file cannot outlast the advertised length.
+const OFFLINE_MUSIC_MAX_SECONDS = 600;
+
+/*
+ * The MP3 played while a visitor is offline.
+ *
+ * Ten minutes is the limit the admin is offered. As with the bell sound it is
+ * measured in the browser, from the file header, before anything is uploaded:
+ * the server would have to download the whole file to know its length, and
+ * rejecting a 10 MB upload as a way of learning a clip is too long is a poor
+ * trade. The declared duration is stored, and Cloudinary is asked to clip
+ * anything over the limit so the stored file cannot be longer than advertised
+ * even if the browser's reading was wrong.
+ *
+ * Replacing an existing track destroys the old file from Cloudinary first, so
+ * uploads do not pile up. The reference is cleared from the settings first: if
+ * the delete somehow failed, the settings would still point at a live file that
+ * nothing is using, which is recoverable - whereas keeping a pointer to a file
+ * that is already gone is not.
+ */
+exports.uploadOfflineMusic = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No MP3 uploaded' });
+    }
+
+    // Sent by the admin panel, from the browser's own reading of the file.
+    const declared = Number(req.body?.duration);
+    const duration = Number.isFinite(declared) && declared > 0
+      ? Math.round(Math.min(declared, OFFLINE_MUSIC_MAX_SECONDS))
+      : 0;
+
+    const settings = await AdminSettings.getSettings();
+
+    // Drop the file being replaced, and clear the pointer to it first.
+    const previousUrl = settings.offlineNotice?.track?.url || null;
+    if (previousUrl) {
+      settings.offlineNotice.track.url = null;
+      await settings.save();
+      await destroyCloudinary(previousUrl, 'video');
+    }
+
+    settings.offlineNotice.track = {
+      url: req.file.path,
+      name: String(req.file.originalname || '').slice(0, 120) || '',
+      // Seconds, so the admin panel can show the length without downloading it.
+      duration,
+      bytes: req.file.size || 0,
+      uploadedAt: new Date(),
+    };
+    await settings.save();
+
+    logAdminActivity(req.user.id, 'Offline Music Uploaded', { url: req.file.path });
+    res.json({ success: true, data: settings.offlineNotice.track });
+  } catch (error) {
+    console.error('Upload offline music error:', error);
+    const message = String(error?.message || '');
+    if (/unknown file format|not allowed|Invalid image or video/i.test(message)) {
+      return res.status(400).json({ message: 'That file could not be read as an MP3. Please upload a valid MP3 file.' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/*
+ * Delete the offline music permanently: the file is destroyed on Cloudinary and
+ * every reference to it is cleared, so nothing is left pointing at it and nothing
+ * is left to play.
+ *
+ * Only the music is touched. The notice's wording, its enabled switch, the volume
+ * and the repeat settings are left exactly as they are, so deleting a track does
+ * not silently reset the rest of the page.
+ *
+ * The clear happens before the destroy: if Cloudinary is unreachable, the pointer
+ * is already gone and no visitor will be sent to a file that may not exist. A
+ * leftover file on the CDN is far cheaper to tidy than a live reference to a
+ * missing one.
+ */
+exports.deleteOfflineMusic = async (req, res) => {
+  try {
+    const settings = await AdminSettings.getSettings();
+    const url = settings.offlineNotice?.track?.url || null;
+
+    settings.offlineNotice.track = { url: null, name: '', duration: 0, bytes: 0, uploadedAt: null };
+    await settings.save();
+
+    if (url) await destroyCloudinary(url, 'video');
+
+    logAdminActivity(req.user.id, 'Offline Music Removed', {});
+    res.json({ success: true, data: settings.offlineNotice.track });
+  } catch (error) {
+    console.error('Delete offline music error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // ============ NOTIFICATION BELL SOUND ============
 
 /*
