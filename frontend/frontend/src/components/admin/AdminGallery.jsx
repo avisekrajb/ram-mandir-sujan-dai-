@@ -8,7 +8,7 @@ import { localized } from '../gallery/galleryText';
 import { isGenericTitle } from '../../utils/galleryPlaceholders';
 import { GalleryUploadModal, GalleryEditModal, GalleryBulkUploadModal, hasDetails, BULK_MAX } from './GalleryForms';
 import {
-  Image, Images, Video, Plus, Trash2, Download, Share2,
+  Image, ImagePlus, Video, Plus, Trash2, Download, Share2,
   Calendar, Search,
   CheckSquare, Square, RefreshCw,
   ChevronLeft, ChevronRight, Star, Pencil, AlertCircle
@@ -280,7 +280,7 @@ const AdminGallery = ({ gallery, setGallery, galleryVideos, setGalleryVideos, t 
             title={t.gl_bulkHeading || `Add up to ${BULK_MAX} photos`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-vermilion px-4 py-2 text-sm font-semibold text-vermilion transition-all hover:bg-vermilion hover:text-white"
           >
-            <Images size={16} /> {fill(t.gl_bulkButton || 'Add {max} photos', { max: BULK_MAX })}
+            <ImagePlus size={16} /> {fill(t.gl_bulkButton || 'Add {max} photos', { max: BULK_MAX })}
           </button>
           <button
             onClick={() => setShowAddModal(true)}
